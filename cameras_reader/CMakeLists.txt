@@ -8,6 +8,8 @@ project(cameras_reader)
 ## is used, also find other catkin packages
 
 find_package(catkin REQUIRED COMPONENTS
+  tf2_ros
+  tf2_geometry_msgs
   nodelet
   message_filters
   cv_bridge
@@ -112,6 +114,8 @@ catkin_package(
   LIBRARIES cameras_reader
   INCLUDE_DIRS include
   CATKIN_DEPENDS
+                 tf2_ros
+                 tf2_geometry_msgs
                  nodelet
                  message_filters
                  roscpp
