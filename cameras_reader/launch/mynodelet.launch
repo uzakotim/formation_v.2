@@ -1,6 +1,8 @@
 <launch>
+  
   <node pkg="nodelet" type="nodelet" name="standalone_nodelet"  args="manager" output="screen"/>
 
-  <node pkg="nodelet" type="nodelet" name="NodeletClass" args="load cameras_reader/NodeletClass standalone_nodelet" output="screen">
+  <node pkg="nodelet" type="nodelet" name="CameraNode" args="load cameras_reader/CameraNode standalone_nodelet" output="screen">
+    <rosparam command="load" file="$(find cameras_reader)/config/cameras.yaml"/>
   </node>
 </launch>

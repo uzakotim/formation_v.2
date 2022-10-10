@@ -135,7 +135,7 @@ include_directories (
   ${catkin_INCLUDE_DIRS} 
   ${OpenCV_INCLUDE_DIRS}
 )
-add_library(cameras_reader src/NodeletClass.cpp)
+add_library(cameras_reader src/CameraNode.cpp)
 target_link_libraries(cameras_reader)
 
 ## Declare a C++ library
@@ -151,7 +151,7 @@ target_link_libraries(cameras_reader)
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
-add_executable(main src/NodeletClass.cpp)
+add_executable(main src/CameraNode.cpp)
 target_link_libraries(main ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
 
 # add_executable(publisher_objects src/Camera/publisher.cpp)
