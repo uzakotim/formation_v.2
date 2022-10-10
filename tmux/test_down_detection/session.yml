@@ -87,7 +87,7 @@ windows:
       panes:
         # - export UAV_NAME="uav${UAV_NUMBERS[1]}"; waitForOdometry; rosrun red_drone_controller red_drone_controller_main 0.0 0.0 3.0 $UAV_NAME 1
         #- export UAV_NAME="uav${UAV_NUMBERS[1]}"; waitForOdometry; rosrun blob_detector_objects main_objects $UAV_NAME
-        - waitForRos; roslaunch --wait vision_example vision_example.launch 
+        - waitForRos; roslaunch --wait sync_blob_detector sync_blob_det.launch 
         # 0 - flying around OFF; 1 - flying around ON;
 
   # - uav2:
