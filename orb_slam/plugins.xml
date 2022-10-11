@@ -1,0 +1,5 @@
+<library path="lib/libOrbSlam">
+  <class name="orb_slam/OrbSlam" type="orb_slam::OrbSlam" base_class_type="nodelet::Nodelet">
+    <description>OrbSlam nodelet</description>
+  </class>
+</library>
