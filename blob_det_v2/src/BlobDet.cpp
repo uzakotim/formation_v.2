@@ -293,7 +293,11 @@ void BlobDet::GrabRGBD(const sensor_msgs::ImageConstPtr& msgRGB,const sensor_msg
   if (!is_initialized_) {
     return;
   }
-
+  ros::Time time_begin = ros::Time::now();
+  ros::Duration duration = time_begin-time_last_image_;
+  double dt = duration.toSec();
+  
+  ROS_INFO("Slept for %lf secs", dt);
   // ROS_INFO_STREAM("Sync ok");
 
   const std::string color_encoding     = "bgr8";
