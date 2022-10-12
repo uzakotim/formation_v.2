@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.1.2)
-project(orb_slam)
+project(blob_det_v2)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -30,8 +30,8 @@ include_directories(include
   ${OpenCV_INCLUDE_DIRS}
 )
 
-add_library(OrbSlam src/OrbSlam.cpp)
+add_library(BlobDet src/BlobDet.cpp)
 
-add_dependencies(OrbSlam ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(BlobDet ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
-target_link_libraries(OrbSlam ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
+target_link_libraries(BlobDet ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})

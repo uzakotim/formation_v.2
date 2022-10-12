@@ -1,0 +1,5 @@
+<library path="lib/libBlobDet">
+  <class name="blob_det_v2/BlobDet" type="blob_det_v2::BlobDet" base_class_type="nodelet::Nodelet">
+    <description>BlobDet nodelet</description>
+  </class>
+</library>

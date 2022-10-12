@@ -16,7 +16,7 @@
   <arg     if="$(arg debug)" name="launch_prefix_debug" value="debug_roslaunch"/>
 
   <!-- will it run as standalone nodelet or using a nodelet manager? -->
-  <arg name="manager" default="$(arg UAV_NAME)_orb_slam_manager" />
+  <arg name="manager" default="$(arg UAV_NAME)_blob_det_v2_manager" />
   <arg     if="$(arg standalone)" name="nodelet" value="standalone"/>
   <arg unless="$(arg standalone)" name="nodelet" value="load"/>
   <arg     if="$(arg standalone)" name="nodelet_manager" value=""/>
@@ -26,7 +26,7 @@
   <group ns="$(arg UAV_NAME)">
 
     <!-- EdgeDetect nodelet -->
-    <node pkg="nodelet" type="nodelet" name="orb_slam" args="$(arg nodelet) orb_slam/OrbSlam $(arg nodelet_manager)" launch-prefix="$(arg launch_prefix_debug)" output="screen">
+    <node pkg="nodelet" type="nodelet" name="blob_det_v2" args="$(arg nodelet) blob_det_v2/BlobDet $(arg nodelet_manager)" launch-prefix="$(arg launch_prefix_debug)" output="screen">
 
       <!-- Parameters loaded from launch file -->
       <param name="gui" type="bool" value="$(arg gui)"/>
@@ -34,8 +34,8 @@
       <param name="UAV_NAME" type="string" value="$(arg UAV_NAME)"/>
 
       <!-- ROS parameters config file -->
-      <rosparam file="$(find orb_slam)/config/default.yaml" />
-      <rosparam file="$(find orb_slam)/config/$(arg RUN_TYPE).yaml" />
+      <rosparam file="$(find blob_det_v2)/config/default.yaml" />
+      <rosparam file="$(find blob_det_v2)/config/$(arg RUN_TYPE).yaml" />
 
       <!-- Subscribers (note that the topic names will also be remapped using the namespace as a prefix) -->
       <!-- <remap from="~image_in" to="mobius_front/image_raw" /> -->
