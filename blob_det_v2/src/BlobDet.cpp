@@ -220,9 +220,9 @@ void BlobDet::onInit() {
   if (_gui_) {
 
     int flags = cv::WINDOW_NORMAL | cv::WINDOW_FREERATIO | cv::WINDOW_GUI_EXPANDED;
-    cv::namedWindow("original", flags);
+    // cv::namedWindow("original", flags);
     // cv::namedWindow("edges", flags);
-    // cv::namedWindow("world_point", flags);
+    cv::namedWindow("detected_objects", flags);
 
     /* Create a Trackbar for user to enter threshold */
     cv::createTrackbar("Min Threshold:", "edges", &low_threshold_, max_low_threshold_);
@@ -315,10 +315,7 @@ void BlobDet::GrabRGBD(const sensor_msgs::ImageConstPtr& msgRGB,const sensor_msg
   // Adittionally, toCvShare and toCvCopy will convert the input image to the specified encoding
   // if it differs from the one in the message. Try to be consistent in what encodings you use throughout the code.
   
-  // const cv_bridge::CvImageConstPtr bridge_image_ptr = cv_bridge::toCvShare(msgRGB, color_encoding);
   const std_msgs::Header           msg_header       = msgRGB->header;
-
-
   const cv_bridge::CvImageConstPtr cv_ptrRGB = cv_bridge::toCvShare(msgRGB);
   const cv_bridge::CvImageConstPtr cv_ptrD = cv_bridge::toCvShare(msgD);
 
@@ -335,7 +332,6 @@ void BlobDet::GrabRGBD(const sensor_msgs::ImageConstPtr& msgRGB,const sensor_msg
   // std::vector<PoseWithCovarianceIdentified> points_array {};
   // -->> Operations on image ----
   cv::cvtColor(cv_image, cv_image, cv::COLOR_BGR2RGB);
-  
   // 1) smoothing
   cv::Mat     blurred_image   = BlobDet::GaussianBlur(cv_image);
   // 2) conversion to hsv
@@ -346,41 +342,40 @@ void BlobDet::GrabRGBD(const sensor_msgs::ImageConstPtr& msgRGB,const sensor_msg
   std::vector<std::vector<cv::Point>> contours = BlobDet::ReturnContours(image_threshold);
   // Image for detections
   cv::Mat drawing = cv::Mat::zeros(cv_image.size(), CV_8UC3 );
-  for (size_t i = 0;i<contours.size();i++)
-  {
-          double newArea = cv::contourArea(contours.at(i));
-          if(newArea > blob_size)
-          {   
-              // Finding blob's center       
-              cv::Point2f center = BlobDet::FindCenter(contours, i);
-              unsigned short val = depth_image.at<unsigned short>(center.y, center.x);
-              center3D.x = center.x;
-              center3D.y = center.y;
-              center3D.z = (float)val/1000.0;
+  if (image_counter_>10){
+      for (size_t i = 0;i<contours.size();i++)
+      {
+              double newArea = cv::contourArea(contours.at(i));
+              if(newArea > blob_size)
+              {   
+                  // Finding blob's center       
+                  cv::Point2f center = BlobDet::FindCenter(contours, i);
+                  unsigned short val = depth_image.at<unsigned short>(center.y, center.x);
+                  center3D.x = center.x;
+                  center3D.y = center.y;
+                  center3D.z = (float)val/1000.0;
 
-  
-              const geometry_msgs::PoseStamped global = BlobDet::projectWorldPointToGlobal(cv_image, msg_header.stamp, center3D.x, center3D.y, center3D.z);
-              // | --------- Timur Uzakov Modification -------- |
-              ROS_INFO_STREAM("x: "<<global.pose.position.x<<"y: "<<global.pose.position.y<<"z: "<<global.pose.position.z);
+                  // | ----------- Project a world point to the image ----------- |
+      
+                  const geometry_msgs::PoseStamped global = BlobDet::projectWorldPointToGlobal(cv_image, msg_header.stamp, center3D.x, center3D.y, center3D.z);
+                  // | --------- Timur Uzakov Modification -------- |
+                  ROS_INFO_STREAM("x: "<<global.pose.position.x<<"y: "<<global.pose.position.y<<"z: "<<global.pose.position.z);
 
 
-              // Draawing 
-              statePt2D.x = center.x;
-              statePt2D.y = center.y;
-              cv::circle  (drawing, statePt2D, 5, detection_color, 10);
-              float radius = BlobDet::FindRadius(contours, i);
-              cv::circle  (drawing, statePt2D, int(radius), detection_color, 2 );
-          }
-  }
-  // | ----------- Project a world point to the image ----------- |
-
-  /* find edges in the image */
-  // BlobDet::projectWorldPointToGlobal(bridge_image_ptr->image, msg_header.stamp, 0, 0, 0);
-
+                  // Draawing 
+                  statePt2D.x = center.x;
+                  statePt2D.y = center.y;
+                  cv::circle  (drawing, statePt2D, 5, detection_color, 10);
+                  float radius = BlobDet::FindRadius(contours, i);
+                  cv::circle  (drawing, statePt2D, int(radius), detection_color, 2 );
+              }
+      }
+  }  
   /* show the image in gui (!the image will be displayed after calling cv::waitKey()!) */
-  if (_gui_) {
-    cv::imshow("original",cv_image);
-  }
+
+  // if (_gui_) {
+    // cv::imshow("original",cv_image);
+  // }
 
 
   /* show the projection image in gui (!the image will be displayed after calling cv::waitKey()!) */
@@ -534,28 +529,24 @@ geometry_msgs::PoseStamped BlobDet::projectWorldPointToGlobal(cv::InputArray ima
     return projected_point;
   }
 
-  // | --------- transform the point to the camera frame -------
-  // | -----------Timur Uzakov modification -----------|
+  // | --------- transform the point to the camera frame ------|
   std::string camera_frame = camera_model_.tfFrame();
-  std::string drone_frame = "uav1/gps_origin";
+  std::string drone_frame = _uav_name_ + "/" + "gps_origin";
 
-
-
-
-
-  // | ----------- backproject the point from 3D to 2D ---------- |
+  // | ----------- backproject the point from 2D to 3D ---------- |
   // const cv::Point3d pt3d(pt3d_cam.pose.position.x, pt3d_cam.pose.position.y, pt3d_cam.pose.position.z);
   const cv::Point2d pt2d(x, y);
-  
-  const cv::Point3d pt3d = camera_model_.projectPixelTo3dRay(pt2d);  // this is now in rectified image coordinates
 
   // | ----------- unrectify the 2D point coordinates ----------- |
 
   // This is done to correct for camera distortion. IT has no effect in simulation, where the camera model
   // is an ideal pinhole camera, but usually has a BIG effect when using real cameras, so don't forget this part!
 
-  // const cv::Point2d pt2d_unrec = camera_model_.unrectifyPoint(pt2d);  // this is now in unrectified image coordinates
+  const cv::Point2d pt2d_unrec = camera_model_.unrectifyPoint(pt2d);  // this is now in unrectified image coordinates
 
+
+  const cv::Point3d pt3d = camera_model_.projectPixelTo3dRay(pt2d_unrec);  // this is now in rectified image coordinates
+  
   // | --------------- draw the point to the image -------------- |
 
   // The point will be drawn as a filled circle with the coordinates as text in the image
@@ -579,7 +570,7 @@ geometry_msgs::PoseStamped BlobDet::projectWorldPointToGlobal(cv::InputArray ima
   pt3d_world.pose.position.x = pt3d.x*z;
   pt3d_world.pose.position.y = pt3d.y*z;
   pt3d_world.pose.position.z = pt3d.z*z;
-  ROS_INFO_STREAM("[BlobDet] input value: "<<pt3d_world);
+  // ROS_INFO_STREAM("[BlobDet] input value: "<<pt3d_world);
   auto ret = transformer_->transformSingle(pt3d_world, drone_frame);
 
   geometry_msgs::PoseStamped pt3d_cam;
@@ -591,7 +582,7 @@ geometry_msgs::PoseStamped BlobDet::projectWorldPointToGlobal(cv::InputArray ima
     ROS_WARN_THROTTLE(1.0, "[BlobDet]: Failed to tranform point from world to drone frame, cannot project point");
     return projected_point;
   }
-  ROS_INFO_STREAM("[BlobDet] return value: "<<ret.value());
+  // ROS_INFO_STREAM("[BlobDet] x: "<<pt3d_drone.x << " y: "<<pt3d_drone.y << " z: "<<pt3d_drone.z);
 
   return pt3d_drone;
 }
