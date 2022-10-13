@@ -37,6 +37,8 @@
 /* custom helper functions from our library */
 #include <mrs_lib/param_loader.h>
 #include <mrs_lib/transformer.h>
+#include <mrs_msgs/PoseWithCovarianceArrayStamped.h>
+#include <mrs_msgs/PoseWithCovarianceIdentified.h>
 
 #include<iostream>
 #include<algorithm>
@@ -137,6 +139,7 @@ private:
   // | ----------------------- publishers ----------------------- |
 
   ros::Publisher             pub_test_;
+  ros::Publisher             pub_points_;
   image_transport::Publisher pub_edges_;
   image_transport::Publisher pub_projection_;
   int                        _rate_timer_publish_;
@@ -165,6 +168,7 @@ private:
 
   void publishOpenCVImage(cv::InputArray detected_edges, const std_msgs::Header& header, const std::string& encoding, const image_transport::Publisher& pub);
   void publishImageNumber(uint64_t count);
+  void publishPoints(const std::vector<mrs_msgs::PoseWithCovarianceIdentified> points_array);
  
   
 };
@@ -252,6 +256,7 @@ void BlobDet::onInit() {
   ROS_INFO_STREAM("subs ok");
   // | ------------------ initialize publishers ----------------- |
   pub_test_       = nh.advertise<std_msgs::UInt64>("test_publisher", 1);
+  pub_points_     = nh.advertise<mrs_msgs::PoseWithCovarianceArrayStamped>("points", 1);
   pub_edges_      = it.advertise("detected_blobs", 1);
   pub_projection_ = it.advertise("projected_point", 1);
 
@@ -333,7 +338,6 @@ void BlobDet::GrabRGBD(const sensor_msgs::ImageConstPtr& msgRGB,const sensor_msg
   cv::Mat cv_image     = cv_ptrRGB->image.clone();
   cv::Mat depth_image  = cv_ptrD->image.clone();
 
-  // std::vector<PoseWithCovarianceIdentified> points_array {};
   // -->> Operations on image ----
   cv::cvtColor(cv_image, cv_image, cv::COLOR_BGR2RGB);
   // 1) smoothing
@@ -346,6 +350,7 @@ void BlobDet::GrabRGBD(const sensor_msgs::ImageConstPtr& msgRGB,const sensor_msg
   std::vector<std::vector<cv::Point>> contours = BlobDet::ReturnContours(image_threshold);
   // Image for detections
   cv::Mat drawing = cv::Mat::zeros(cv_image.size(), CV_8UC3 );
+  std::vector<mrs_msgs::PoseWithCovarianceIdentified> points_array {};
   if (image_counter_>10){
       for (size_t i = 0;i<contours.size();i++)
       {
@@ -364,9 +369,14 @@ void BlobDet::GrabRGBD(const sensor_msgs::ImageConstPtr& msgRGB,const sensor_msg
                   const geometry_msgs::PoseStamped global = BlobDet::projectWorldPointToGlobal(cv_image, msg_header.stamp, center3D.x, center3D.y, center3D.z);
                   // | --------- Timur Uzakov Modification -------- |
                   ROS_INFO_STREAM("x: "<<global.pose.position.x<<"y: "<<global.pose.position.y<<"z: "<<global.pose.position.z);
-
-
-                  // Draawing 
+                  
+                  mrs_msgs::PoseWithCovarianceIdentified detected_point;
+                  detected_point.pose.position.x = global.pose.position.x;
+                  detected_point.pose.position.y = global.pose.position.y;
+                  detected_point.pose.position.z = global.pose.position.z;
+                  points_array.push_back(detected_point);
+                  
+                  // Drawing 
                   statePt2D.x = center.x;
                   statePt2D.y = center.y;
                   cv::circle  (drawing, statePt2D, 5, detection_color, 10);
@@ -375,6 +385,7 @@ void BlobDet::GrabRGBD(const sensor_msgs::ImageConstPtr& msgRGB,const sensor_msg
               }
       }
   }  
+
   /* show the image in gui (!the image will be displayed after calling cv::waitKey()!) */
 
   // if (_gui_) {
@@ -390,7 +401,12 @@ void BlobDet::GrabRGBD(const sensor_msgs::ImageConstPtr& msgRGB,const sensor_msg
   // | ------------------------------------------------------------|
   /* publish the image with the detected edges */
   BlobDet::publishOpenCVImage(cv_image + drawing, msg_header, color_encoding, pub_projection_);
-
+  
+  if (points_array.size() > 0)
+  {
+    /* publish the center points */
+    BlobDet::publishPoints(points_array);
+  }
   /* publish image count */
   BlobDet::publishImageNumber(image_counter_);
   
@@ -467,6 +483,18 @@ void BlobDet::publishOpenCVImage(cv::InputArray image, const std_msgs::Header& h
   sensor_msgs::ImageConstPtr out_msg = bridge_image_out.toImageMsg();
   // ... and publish the message
   pub.publish(out_msg);
+}
+
+/* publishPoints() method //{ */
+
+void BlobDet::publishPoints(const std::vector<mrs_msgs::PoseWithCovarianceIdentified> points_array) {
+  // ---------------------MSG-----------------------------------------------
+  mrs_msgs::PoseWithCovarianceArrayStamped out_msg;
+  out_msg.poses = points_array;
+  out_msg.header.frame_id = _uav_name_ + "/" + "gps_origin";
+  out_msg.header.stamp = ros::Time::now();
+  
+  pub_points_.publish(out_msg);
 }
 
 //}
