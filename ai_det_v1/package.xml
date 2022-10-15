@@ -1,9 +1,9 @@
 <?xml version="1.0"?>
 <package format="2">
 
-  <name>sync_blob_detector</name>
+  <name>ai_det_v1</name>
   <version>2.0.0</version>
-  <description>Detects cubes using blob detector</description>
+  <description>AiDet</description>
 
   <maintainer email="timauzakov@gmail.com">Timur Uzakov</maintainer>
   <author email="timauzakov@gmail.com">Timur Uzakov</author>

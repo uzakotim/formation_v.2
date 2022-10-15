@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.1.2)
-project(sync_blob_detector)
+project(ai_det_v1)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -13,6 +13,7 @@ find_package(catkin REQUIRED COMPONENTS
   tf2_geometry_msgs
   image_geometry
   mrs_lib
+  message_filters
 )
 
 find_package(OpenCV REQUIRED)
@@ -29,8 +30,8 @@ include_directories(include
   ${OpenCV_INCLUDE_DIRS}
 )
 
-add_library(SyncBlobDet src/SyncBlobDet.cpp)
+add_library(AiDet src/AiDet.cpp)
 
-add_dependencies(SyncBlobDet ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(AiDet ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
-target_link_libraries(SyncBlobDet ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
+target_link_libraries(AiDet ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})

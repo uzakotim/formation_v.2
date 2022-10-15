@@ -37,19 +37,45 @@
 /* custom helper functions from our library */
 #include <mrs_lib/param_loader.h>
 #include <mrs_lib/transformer.h>
+#include <mrs_msgs/PoseWithCovarianceArrayStamped.h>
+#include <mrs_msgs/PoseWithCovarianceIdentified.h>
+
+#include<iostream>
+#include<algorithm>
+#include<fstream>
+#include<chrono>
+#include<thread>
+#include<string>
+#include<vector>
+
+#include <message_filters/subscriber.h>
+#include <message_filters/time_synchronizer.h>
+#include <message_filters/sync_policies/approximate_time.h>
 
 //}
 
-namespace sync_blob_detector
+namespace ai_det_v1
 {
 
-/* class SyncBlobDet //{ */
+/* class AiDet //{ */
 
-class SyncBlobDet : public nodelet::Nodelet {
+class AiDet : public nodelet::Nodelet {
 
 public:
   /* onInit() is called when nodelet is launched (similar to main() in regular node) */
   virtual void onInit();
+  cv::Mat GaussianBlur(cv::Mat image);
+  cv::Mat BGRtoHSV(cv::Mat image);
+  cv::Mat ReturnColorMask(cv::Mat image);
+  cv::Mat ReturnRedMask(cv::Mat image);
+  cv::Mat ReturnOrangeMask(cv::Mat image);
+  cv::Mat ReturnYellowMask(cv::Mat image);
+  cv::Mat ReturnPurpleMask(cv::Mat image);
+  cv::Mat ReturnBlueMask(cv::Mat image);
+  std::vector<std::vector<cv::Point>> ReturnContours(cv::Mat image_threshold);
+  cv::Point2f FindCenter(std::vector<std::vector<cv::Point>> contours, int ID);
+  float FindRadius(std::vector<std::vector<cv::Point>> contours, int ID);
+  int FindMaxAreaContourId(std::vector<std::vector<cv::Point>> contours);
 
 private:
   /* flags */
@@ -66,8 +92,15 @@ private:
 
   // | ---------------------- msg callbacks --------------------- |
 
-  void                        callbackImage(const sensor_msgs::ImageConstPtr& msg);
-  image_transport::Subscriber sub_image_;
+  // void callbackImage(const sensor_msgs::ImageConstPtr& msg);
+  void                        GrabRGBD(const sensor_msgs::ImageConstPtr& msgRGB,const sensor_msgs::ImageConstPtr& msgD);
+  // | -------------- msg synchronization ------------------------|
+  message_filters::Subscriber<sensor_msgs::Image> sub_image_;
+  message_filters::Subscriber<sensor_msgs::Image> sub_depth_;
+
+  typedef message_filters::sync_policies::ApproximateTime<sensor_msgs::Image, sensor_msgs::Image> MySyncPolicy;
+  typedef message_filters::Synchronizer<MySyncPolicy> Sync;
+  boost::shared_ptr<Sync> sync_;
 
   void                               callbackCameraInfo(const sensor_msgs::CameraInfoConstPtr& msg);
   ros::Subscriber                    sub_camera_info_;
@@ -83,7 +116,7 @@ private:
 
   static cv::Mat detectEdgesCanny(cv::InputArray image, int low_threshold);
   static void    showEdgeImage(cv::InputArray image, cv::InputArray detected_edges);
-  cv::Mat        projectWorldPointToImage(cv::InputArray image, const ros::Time& image_stamp, const double x, const double y, const double z);
+  geometry_msgs::PoseStamped  projectWorldPointToGlobal(cv::InputArray image, const ros::Time& image_stamp, const double x, const double y, const double z);
 
   // | --------- variables, related to message checking --------- |
 
@@ -110,21 +143,62 @@ private:
   // | ----------------------- publishers ----------------------- |
 
   ros::Publisher             pub_test_;
+  ros::Publisher             pub_points_;
   image_transport::Publisher pub_edges_;
   image_transport::Publisher pub_projection_;
   int                        _rate_timer_publish_;
 
+  // ------------------------------------------------------------|
+
+  // ---------------------Color parameters----------------------------|
+  const cv::Scalar                  color_red_one_min = cv::Scalar(0,70,50);        //RED
+  const cv::Scalar                  color_red_one_max = cv::Scalar(10,255,255);     //RED
+
+  const cv::Scalar                  color_red_two_min = cv::Scalar(170,70,50);      //RED
+  const cv::Scalar                  color_red_two_max = cv::Scalar(180,255,255);    //RED
+    
+  const cv::Scalar                  color_blue_min = cv::Scalar(78,158,124);        //BLUE
+  const cv::Scalar                  color_blue_max = cv::Scalar(140,255,255);       //BLUE
+  
+  const cv::Scalar                  color_orange_min = cv::Scalar(15,70,50);       //ORANGE
+  const cv::Scalar                  color_orange_max = cv::Scalar(30,255,255);     //ORANGE
+            
+  const cv::Scalar                  color_yellow_min = cv::Scalar(25,70,50);       //YELLOW
+  const cv::Scalar                  color_yellow_max = cv::Scalar(35,255,255);     //YELLOW
+ 
+  const cv::Scalar                  color_green_min = cv::Scalar(35,158,124);      //GREEN
+  const cv::Scalar                  color_green_max = cv::Scalar(75,255,255);      //GREEN
+  
+  const cv::Scalar                  color_purple_min = cv::Scalar(140,70,50);      //PURPLE
+  const cv::Scalar                  color_purple_max = cv::Scalar(170,255,255);    //PURPLE
+  
+  const cv::Scalar                  color_black_min = cv::Scalar(0,0,0);           //BLACK
+  const cv::Scalar                  color_black_max = cv::Scalar(180,255,30);      //BLACK
+ 
+
+  // in BGR
+  const cv::Scalar                  detection_color_blue = cv::Scalar(255,100,0);
+  const cv::Scalar                  detection_color_red = cv::Scalar(0,0,255);
+  const cv::Scalar                  detection_color_yellow = cv::Scalar(0,255,255);
+  const cv::Scalar                  detection_color_orange = cv::Scalar(13,143,255);
+  const cv::Scalar                  detection_color_purple = cv::Scalar(255,0,255);
+  // | --------- path to destination -------------------------------- |
+    
+  const std::string path_to_destination = "/home/timur/workspace/src/formation_v.2/";
   // | --------------------- other functions -------------------- |
 
   void publishOpenCVImage(cv::InputArray detected_edges, const std_msgs::Header& header, const std::string& encoding, const image_transport::Publisher& pub);
   void publishImageNumber(uint64_t count);
+  void publishPoints(const std::vector<mrs_msgs::PoseWithCovarianceIdentified> points_array);
+ 
+  
 };
 
 //}
 
 /* onInit() method //{ */
 
-void SyncBlobDet::onInit() {
+void AiDet::onInit() {
 
   // | ---------------- set my booleans to false ---------------- |
   // but remember, always set them to their default value in the header file
@@ -132,16 +206,17 @@ void SyncBlobDet::onInit() {
   got_image_       = false;
   got_camera_info_ = false;
 
+
   /* obtain node handle */
   ros::NodeHandle nh = nodelet::Nodelet::getMTPrivateNodeHandle();
-
+  
   /* waits for the ROS to publish clock */
   ros::Time::waitForValid();
 
   // | ------------------- load ros parameters ------------------ |
   /* (mrs_lib implementation checks whether the parameter was loaded or not) */
 
-  mrs_lib::ParamLoader param_loader(nh, "SyncBlobDet");
+  mrs_lib::ParamLoader param_loader(nh, "AiDet");
 
   param_loader.loadParam("UAV_NAME", _uav_name_);
   param_loader.loadParam("gui", _gui_);
@@ -160,7 +235,7 @@ void SyncBlobDet::onInit() {
 
   // | --------------------- tf transformer --------------------- |
 
-  transformer_ = std::make_unique<mrs_lib::Transformer>("SyncBlobDet");
+  transformer_ = std::make_unique<mrs_lib::Transformer>("AiDet");
   transformer_->setDefaultPrefix(_uav_name_);
   transformer_->retryLookupNewest(true);
 
@@ -170,9 +245,9 @@ void SyncBlobDet::onInit() {
   if (_gui_) {
 
     int flags = cv::WINDOW_NORMAL | cv::WINDOW_FREERATIO | cv::WINDOW_GUI_EXPANDED;
-    cv::namedWindow("original", flags);
-    cv::namedWindow("edges", flags);
-    cv::namedWindow("world_point", flags);
+    // cv::namedWindow("original", flags);
+    // cv::namedWindow("edges", flags);
+    cv::namedWindow("detected_objects", flags);
 
     /* Create a Trackbar for user to enter threshold */
     cv::createTrackbar("Min Threshold:", "edges", &low_threshold_, max_low_threshold_);
@@ -182,7 +257,6 @@ void SyncBlobDet::onInit() {
 
   /* initialize the image transport, needs node handle */
   image_transport::ImageTransport it(nh);
-
   // | -------------- initialize tranform listener -------------- |
   // the transform listener will fill the TF buffer with latest transforms
   tf_listener_ptr_ = std::make_unique<tf2_ros::TransformListener>(tf_buffer_);
@@ -193,20 +267,25 @@ void SyncBlobDet::onInit() {
   // std::string image_in = _uav_name_ + "/rgbd_down/color/image_raw";
   // std::string camera_info_in = _uav_name_ + "/rgbd_down/color/camera_info";
   // | ----------------- initialize subscribers ----------------- |
-  sub_image_       = it.subscribe("image_in", 1, &SyncBlobDet::callbackImage, this);
-  sub_camera_info_ = nh.subscribe("camera_info_in", 1, &SyncBlobDet::callbackCameraInfo, this, ros::TransportHints().tcpNoDelay());
-
+  // sub_image_       = it.subscribe("image_in", 1, &AiDet::callbackImage, this);
+  // sub_depth_       = it.subscribe("depth_in", 1, &AiDet::callbackImage, this);
+  sub_camera_info_ = nh.subscribe("camera_info_in", 1, &AiDet::callbackCameraInfo, this, ros::TransportHints().tcpNoDelay());
+  sub_image_.subscribe(nh, "image_in", 100);
+  sub_depth_.subscribe(nh, "depth_in", 100);
+  sync_.reset(new Sync(MySyncPolicy(10), sub_image_, sub_depth_));
+  sync_->registerCallback(boost::bind(&AiDet::GrabRGBD, this, _1, _2));
   ROS_INFO_STREAM("subs ok");
   // | ------------------ initialize publishers ----------------- |
   pub_test_       = nh.advertise<std_msgs::UInt64>("test_publisher", 1);
-  pub_edges_      = it.advertise("detected_edges", 1);
+  pub_points_     = nh.advertise<mrs_msgs::PoseWithCovarianceArrayStamped>("points", 1);
+  pub_edges_      = it.advertise("detected_blobs", 1);
   pub_projection_ = it.advertise("projected_point", 1);
 
   ROS_INFO_STREAM("pubs ok");
   // | -------------------- initialize timers ------------------- |
-  timer_check_subscribers_ = nh.createTimer(ros::Rate(_rate_timer_check_subscribers_), &SyncBlobDet::callbackTimerCheckSubscribers, this);
-
-  ROS_INFO_ONCE("[SyncBlobDet]: initialized");
+  timer_check_subscribers_ = nh.createTimer(ros::Rate(_rate_timer_check_subscribers_), &AiDet::callbackTimerCheckSubscribers, this);
+  // ------------------------------------------------------------|
+  ROS_INFO_ONCE("[AiDet]: initialized");
 
   is_initialized_ = true;
 }
@@ -215,9 +294,10 @@ void SyncBlobDet::onInit() {
 
 // | ---------------------- msg callbacks --------------------- |
 
+
 /* callbackCameraInfo() method //{ */
 
-void SyncBlobDet::callbackCameraInfo(const sensor_msgs::CameraInfoConstPtr& msg) {
+void AiDet::callbackCameraInfo(const sensor_msgs::CameraInfoConstPtr& msg) {
 
   if (!is_initialized_) {
     return;
@@ -234,11 +314,17 @@ void SyncBlobDet::callbackCameraInfo(const sensor_msgs::CameraInfoConstPtr& msg)
 
 /* callbackImage() method //{ */
 
-void SyncBlobDet::callbackImage(const sensor_msgs::ImageConstPtr& msg) {
+void AiDet::GrabRGBD(const sensor_msgs::ImageConstPtr& msgRGB,const sensor_msgs::ImageConstPtr& msgD) {
 
   if (!is_initialized_) {
     return;
   }
+  ros::Time time_begin = ros::Time::now();
+  ros::Duration duration = time_begin-time_last_image_;
+  double dt = duration.toSec();
+  
+  ROS_INFO("Slept for %lf secs", dt);
+  // ROS_INFO_STREAM("Sync ok");
 
   const std::string color_encoding     = "bgr8";
   const std::string grayscale_encoding = "mono8";
@@ -258,46 +344,67 @@ void SyncBlobDet::callbackImage(const sensor_msgs::ImageConstPtr& msg) {
   // or copy the image data using cv::Mat::copyTo() method.
   // Adittionally, toCvShare and toCvCopy will convert the input image to the specified encoding
   // if it differs from the one in the message. Try to be consistent in what encodings you use throughout the code.
-  const cv_bridge::CvImageConstPtr bridge_image_ptr = cv_bridge::toCvShare(msg, color_encoding);
-  const std_msgs::Header           msg_header       = msg->header;
+  
+  const std_msgs::Header           msg_header       = msgRGB->header;
+  const cv_bridge::CvImageConstPtr cv_ptrRGB = cv_bridge::toCvShare(msgRGB,color_encoding);
+  const cv_bridge::CvImageConstPtr cv_ptrD = cv_bridge::toCvShare(msgD);
 
-  /* show the image in gui (!the image will be displayed after calling cv::waitKey()!) */
-  if (_gui_) {
-    cv::imshow("original", bridge_image_ptr->image);
-  }
 
+ 
   /* output a text about it */
-  ROS_INFO_THROTTLE(1, "[SyncBlobDet]: Total of %u images received so far", (unsigned int)image_counter_);
+  ROS_INFO_THROTTLE(1, "[AiDet]: Total of %u images received so far", (unsigned int)image_counter_);
+  // | -------------- Detect blob using OpenCV --------------------------------|
 
-  // | ---------- Detect edges in the image using Canny --------- |
+  cv::Mat cv_image     = cv_ptrRGB->image.clone();
+  cv::Mat depth_image  = cv_ptrD->image.clone();
 
-  /* find edges in the image */
-  const auto detected_edges = SyncBlobDet::detectEdgesCanny(bridge_image_ptr->image, low_threshold_);
-
-  /* show the edges image in gui */
-  if (_gui_) {
-    SyncBlobDet::showEdgeImage(bridge_image_ptr->image, detected_edges);
+  std::vector<std::string> classes;
+  std::ifstream file(path_to_destination +"ai_det_v1/include/ai_det_v1/coco.names");
+  std::string line;
+  while (std::getline(file, line)) {
+      classes.push_back(line);
   }
 
-  /* publish the image with the detected edges */
-  SyncBlobDet::publishOpenCVImage(detected_edges, msg_header, grayscale_encoding, pub_edges_);
+  cv::dnn::Net net = cv::dnn::readNetFromDarknet(path_to_destination + "ai_det_v1/include/ai_det_v1/yolov3.cfg", path_to_destination + "ai_det_v1/include/ai_det_v1/yolov3.weights");
+  cv::dnn::DetectionModel model = cv::dnn::DetectionModel (net);
+  model.setInputParams(1 / 255.0, cv::Size(608,608), cv::Scalar(), true);
+  std::vector<int> classIds;
+  std::vector<float> scores;
+  std::vector<cv::Rect> boxes;
+  model.detect(cv_image, classIds, scores, boxes,0.1,0.4);
 
-  // | ----------- Project a world point to the image ----------- |
+  for (int i = 0; i < classIds.size(); i++) {
+      cv::rectangle(cv_image, boxes[i], cv::Scalar(0, 255, 0), 2);
 
-  /* find edges in the image */
-  const auto projection_image = SyncBlobDet::projectWorldPointToImage(bridge_image_ptr->image, msg_header.stamp, 0, 0, 0);
+      char text[100];
+      snprintf(text, sizeof(text), "%.2f", scores[i]);
+      cv::putText(cv_image, text, cv::Point(boxes[i].x, boxes[i].y - 5), cv::FONT_HERSHEY_SIMPLEX, 1,
+              cv::Scalar(0, 255, 0), 2);
+  }
+  /* show the image in gui (!the image will be displayed after calling cv::waitKey()!) */
+
+  // if (_gui_) {
+    // cv::imshow("original",cv_image);
+  // }
 
   /* show the projection image in gui (!the image will be displayed after calling cv::waitKey()!) */
-  if (_gui_) {
-    cv::imshow("world_point", projection_image);
-  }
 
-  /* publish the image with the detected edges */
-  SyncBlobDet::publishOpenCVImage(projection_image, msg_header, color_encoding, pub_projection_);
+  if (_gui_) {
+    cv::imshow("detected_objects", cv_image);
+  }
+  // | ------------------------------------------------------------|
+  /* publish the image with the detected objects */
+  AiDet::publishOpenCVImage(cv_image, msg_header, color_encoding, pub_projection_);
+  
+  // if (points_array.size() > 0)
+  // {
+    /* publish the center points */
+    // AiDet::publishPoints(points_array);
+  // }
 
   /* publish image count */
-  SyncBlobDet::publishImageNumber(image_counter_);
-
+  AiDet::publishImageNumber(image_counter_);
+  
   if (_gui_) {
     /* !!! needed by OpenCV to correctly show the images using cv::imshow !!! */
     cv::waitKey(1);
@@ -306,20 +413,21 @@ void SyncBlobDet::callbackImage(const sensor_msgs::ImageConstPtr& msg) {
 
 //}
 
+//}
+
 // | --------------------- timer callbacks -------------------- |
 
 /* callbackTimerCheckSubscribers() method //{ */
 
-void SyncBlobDet::callbackTimerCheckSubscribers([[maybe_unused]] const ros::TimerEvent& te) {
+void AiDet::callbackTimerCheckSubscribers([[maybe_unused]] const ros::TimerEvent& te) {
 
   if (!is_initialized_) {
     return;
   }
 
   if (!got_image_) {
-    ROS_WARN_THROTTLE(1.0, "Not received camera image since node launch.");
+    ROS_WARN_THROTTLE(1.0, "Not received camera image and depth msgs since node launch.");
   }
-
   if (!got_camera_info_) {
     ROS_WARN_THROTTLE(1.0, "Not received camera info msg since node launch.");
   }
@@ -331,7 +439,7 @@ void SyncBlobDet::callbackTimerCheckSubscribers([[maybe_unused]] const ros::Time
 
 /* publishImageNumber() method //{ */
 
-void SyncBlobDet::publishImageNumber(uint64_t count) {
+void AiDet::publishImageNumber(uint64_t count) {
 
   std_msgs::UInt64 message;
 
@@ -351,7 +459,7 @@ void SyncBlobDet::publishImageNumber(uint64_t count) {
 
 /* publishOpenCVImage() method //{ */
 
-void SyncBlobDet::publishOpenCVImage(cv::InputArray image, const std_msgs::Header& header, const std::string& encoding, const image_transport::Publisher& pub) {
+void AiDet::publishOpenCVImage(cv::InputArray image, const std_msgs::Header& header, const std::string& encoding, const image_transport::Publisher& pub) {
 
   // Prepare a cv_bridge image to be converted to the ROS message
   cv_bridge::CvImage bridge_image_out;
@@ -372,11 +480,23 @@ void SyncBlobDet::publishOpenCVImage(cv::InputArray image, const std_msgs::Heade
   pub.publish(out_msg);
 }
 
+/* publishPoints() method //{ */
+
+void AiDet::publishPoints(const std::vector<mrs_msgs::PoseWithCovarianceIdentified> points_array) {
+  // ---------------------MSG-----------------------------------------------
+  mrs_msgs::PoseWithCovarianceArrayStamped out_msg;
+  out_msg.poses = points_array;
+  out_msg.header.frame_id = _uav_name_ + "/" + "gps_origin";
+  out_msg.header.stamp = ros::Time::now();
+  
+  pub_points_.publish(out_msg);
+}
+
 //}
 
 /* detectEdgesCanny() method //{ */
 
-cv::Mat SyncBlobDet::detectEdgesCanny(cv::InputArray image, int low_threshold) {
+cv::Mat AiDet::detectEdgesCanny(cv::InputArray image, int low_threshold) {
 
   // BASED ON EXAMPLE https://docs.opencv.org/3.2.0/da/d5c/tutorial_canny_detector.html
   cv::Mat src_gray, detected_edges;
@@ -402,7 +522,7 @@ cv::Mat SyncBlobDet::detectEdgesCanny(cv::InputArray image, int low_threshold) {
 
 /* showEdgeImage() method //{ */
 
-void SyncBlobDet::showEdgeImage(cv::InputArray image, cv::InputArray detected_edges) {
+void AiDet::showEdgeImage(cv::InputArray image, cv::InputArray detected_edges) {
 
   cv::Mat colored_edges;
 
@@ -423,61 +543,25 @@ void SyncBlobDet::showEdgeImage(cv::InputArray image, cv::InputArray detected_ed
 
 /* projectWorldPointToImage() method //{ */
 
-cv::Mat SyncBlobDet::projectWorldPointToImage(cv::InputArray image, const ros::Time& image_stamp, const double x, const double y, const double z) {
+geometry_msgs::PoseStamped AiDet::projectWorldPointToGlobal(cv::InputArray image, const ros::Time& image_stamp, const double x, const double y, const double z) {
 
   // cv::InputArray indicates that the variable should not be modified, but we want
   // to draw into the image. Therefore we need to copy it.
-  cv::Mat projected_point;
-  image.copyTo(projected_point);
+  geometry_msgs::PoseStamped projected_point;
+  // image.copyTo(projected_point);
 
   // If no camera info was received yet, we cannot do the backprojection, alert the user and return.
   if (!got_camera_info_) {
-    ROS_WARN_THROTTLE(1.0, "[SyncBlobDet]: No camera info received yet, cannot backproject point to image");
+    ROS_WARN_THROTTLE(1.0, "[AiDet]: No camera info received yet, cannot backproject point to image");
     return projected_point;
   }
 
-  // | --------- transform the point to the camera frame -------- |
-
-  geometry_msgs::PoseStamped pt3d_world;
-  pt3d_world.header.frame_id = _uav_name_ + "/" + world_frame_id_;
-  pt3d_world.header.stamp    = ros::Time::now();
-  pt3d_world.pose.position.x = x;
-  pt3d_world.pose.position.y = y;
-  pt3d_world.pose.position.z = z;
-
-  // | -----------Timur Uzakov modification -----------|
+  // | --------- transform the point to the camera frame ------|
   std::string camera_frame = camera_model_.tfFrame();
-  std::string drone_frame = "uav1/fcu";
+  std::string drone_frame = _uav_name_ + "/" + "gps_origin";
 
-  auto ret = transformer_->transformSingle(pt3d_world, camera_frame);
-  auto ret2 = transformer_->transformSingle(pt3d_world, drone_frame);
-
-  geometry_msgs::PoseStamped pt3d_cam;
-  geometry_msgs::PoseStamped pt3d_drone;
-
-  if (ret) {
-    pt3d_cam = ret.value();
-  } else {
-    ROS_WARN_THROTTLE(1.0, "[SyncBlobDet]: Failed to tranform point from world to camera frame, cannot backproject point to image");
-    return projected_point;
-  }
-  
-  if (ret2) {
-    pt3d_drone = ret2.value();
-  } else {
-    ROS_WARN_THROTTLE(1.0, "[SyncBlobDet]: Failed to tranform point from world to drone frame, cannot project point");
-    return projected_point;
-  }
-
-
-
-
-  // | --------- Timur Uzakov Modification -------- |
-  ROS_INFO_STREAM("x: "<<pt3d_drone.pose.position.x<<"y: "<<pt3d_drone.pose.position.y<<"z: "<<pt3d_drone.pose.position.z);
-
-  // | ----------- backproject the point from 3D to 2D ---------- |
-  const cv::Point3d pt3d(pt3d_cam.pose.position.x, pt3d_cam.pose.position.y, pt3d_cam.pose.position.z);
-  const cv::Point2d pt2d = camera_model_.project3dToPixel(pt3d);  // this is now in rectified image coordinates
+  // | ----------- backproject the point from 2D to 3D ---------- |
+  const cv::Point2d pt2d(x, y);
 
   // | ----------- unrectify the 2D point coordinates ----------- |
 
@@ -486,28 +570,38 @@ cv::Mat SyncBlobDet::projectWorldPointToImage(cv::InputArray image, const ros::T
 
   const cv::Point2d pt2d_unrec = camera_model_.unrectifyPoint(pt2d);  // this is now in unrectified image coordinates
 
+
+  const cv::Point3d pt3d = camera_model_.projectPixelTo3dRay(pt2d_unrec);  // this is now in rectified image coordinates
+  
   // | --------------- draw the point to the image -------------- |
+  
+  geometry_msgs::PoseStamped pt3d_world;
+  pt3d_world.header.frame_id = _uav_name_ + "/" + world_frame_id_;
+  pt3d_world.header.stamp    = ros::Time::now();
+  pt3d_world.pose.position.x = pt3d.x*z;
+  pt3d_world.pose.position.y = pt3d.y*z;
+  pt3d_world.pose.position.z = pt3d.z*z;
+  // ROS_INFO_STREAM("[AiDet] input value: "<<pt3d_world);
+  auto ret = transformer_->transformSingle(pt3d_world, drone_frame);
 
-  // The point will be drawn as a filled circle with the coordinates as text in the image
-  const int        pt_radius = 5;      // pixels
-  const cv::Scalar color(255, 0, 0);   // red or blue color, depending on the pixel ordering (BGR or RGB)
-  const int        pt_thickness = -1;  // pixels, -1 means filled
-  cv::circle(projected_point, pt2d_unrec, pt_radius, color, pt_thickness);
+  geometry_msgs::PoseStamped pt3d_cam;
+  geometry_msgs::PoseStamped pt3d_drone;
+  
+  if (ret) {
+    pt3d_drone = ret.value();
+  } else {
+    ROS_WARN_THROTTLE(1.0, "[AiDet]: Failed to tranform point from world to drone frame, cannot project point");
+    return projected_point;
+  }
+  // ROS_INFO_STREAM("[AiDet] x: "<<pt3d_drone.x << " y: "<<pt3d_drone.y << " z: "<<pt3d_drone.z);
 
-  // Draw the text with the coordinates to the image
-  const std::string coord_txt = "[" + std::to_string(x) + "," + std::to_string(y) + "," + std::to_string(z) + "]";
-  const cv::Point2d txt_pos(pt2d_unrec.x + 5, pt2d_unrec.y + 5);  // offset the text a bit to avoid overlap with the circle
-  const int         txt_font       = cv::FONT_HERSHEY_PLAIN;      // some default OpenCV font
-  const double      txt_font_scale = 1.0;
-  cv::putText(projected_point, coord_txt, txt_pos, txt_font, txt_font_scale, color);
-
-  return projected_point;
+  return pt3d_drone;
 }
 
-//}
+/*| --------- AiDet Function --------------------------------|*/
 
 }  // namespace vision_example
 
 /* every nodelet must include macros which export the class as a nodelet plugin */
 #include <pluginlib/class_list_macros.h>
-PLUGINLIB_EXPORT_CLASS(sync_blob_detector::SyncBlobDet, nodelet::Nodelet);
+PLUGINLIB_EXPORT_CLASS(ai_det_v1::AiDet, nodelet::Nodelet);

@@ -11,7 +11,7 @@ windows:
   - gazebo:
       layout: tiled
       panes:
-        - waitForRos; roslaunch mrs_simulation simulation.launch world_name:=grass_plane_blue_box gui:=true
+        - waitForRos; roslaunch mrs_simulation simulation.launch world_name:=grass_plane_color_boxes gui:=true
   - status:
       layout: tiled
       panes:
@@ -87,13 +87,13 @@ windows:
       panes:
         # - export UAV_NAME="uav${UAV_NUMBERS[1]}"; waitForOdometry; rosrun red_drone_controller red_drone_controller_main 0.0 0.0 3.0 $UAV_NAME 1
         #- export UAV_NAME="uav${UAV_NUMBERS[1]}"; waitForOdometry; rosrun blob_detector_objects main_objects $UAV_NAME
-        # - waitForRos; roslaunch --wait sync_blob_detector sync_blob_det.launch 
+        # - waitForRos; roslaunch --wait ai_det_v1 ai_det_v1.launch 
         - waitForRos; roslaunch --wait blob_det_v2 blob_det_v2.launch 
         # 0 - flying around OFF; 1 - flying around ON;
   - computer:
       layout: tiled
       panes:
-        - waitForRos; roslaunch --wait blobs_collector blobs_collector.launch 
+        # - waitForRos; roslaunch --wait blobs_collector blobs_collector.launch 
   # - uav2:
       # layout: tiled
       # panes:
@@ -106,3 +106,7 @@ windows:
         # - export UAV_NAME="uav${UAV_NUMBERS[3]}"; waitForOdometry; rosrun blob_detector main $UAV_NAME
         # - export UAV_NAME="uav${UAV_NUMBERS[3]}"; waitForOdometry; rosrun blob_detector_objects main_objects $UAV_NAME
         # - export UAV_NAME2="uav${UAV_NUMBERS[2]}"; export UAV_NAME3="uav${UAV_NUMBERS[3]}"; export UAV_NAME4="uav${UAV_NUMBERS[4]}"; waitForOdometry; rosrun sensor_fusion_two sf_two $UAV_NAME3 $UAV_NAME2 -4.5 0 0.0
+  - gz_rate:
+      layout: tiled
+      panes:
+        - waitForOdometry; sleep 5; gz physics -u 125

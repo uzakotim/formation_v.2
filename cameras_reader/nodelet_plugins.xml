@@ -1,7 +1,0 @@
-<library path="lib/libcameras_reader">
-  <class name="cameras_reader/CameraNode" type="cameras_reader::CameraNode" base_class_type="nodelet::Nodelet">
-  <description>
-    This is my nodelet.
-  </description>
-  </class>
-</library>

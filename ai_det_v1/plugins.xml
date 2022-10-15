@@ -1,0 +1,5 @@
+<library path="lib/libAiDet">
+  <class name="ai_det_v1/AiDet" type="ai_det_v1::AiDet" base_class_type="nodelet::Nodelet">
+    <description>AiDet nodelet</description>
+  </class>
+</library>

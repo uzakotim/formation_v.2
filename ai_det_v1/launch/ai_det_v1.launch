@@ -16,7 +16,7 @@
   <arg     if="$(arg debug)" name="launch_prefix_debug" value="debug_roslaunch"/>
 
   <!-- will it run as standalone nodelet or using a nodelet manager? -->
-  <arg name="manager" default="$(arg UAV_NAME)_blob_detector_manager" />
+  <arg name="manager" default="$(arg UAV_NAME)_ai_det_v1_manager" />
   <arg     if="$(arg standalone)" name="nodelet" value="standalone"/>
   <arg unless="$(arg standalone)" name="nodelet" value="load"/>
   <arg     if="$(arg standalone)" name="nodelet_manager" value=""/>
@@ -26,7 +26,7 @@
   <group ns="$(arg UAV_NAME)">
 
     <!-- EdgeDetect nodelet -->
-    <node pkg="nodelet" type="nodelet" name="sync_blob_detector" args="$(arg nodelet) sync_blob_detector/SyncBlobDet $(arg nodelet_manager)" launch-prefix="$(arg launch_prefix_debug)" output="screen">
+    <node pkg="nodelet" type="nodelet" name="ai_det_v1" args="$(arg nodelet) ai_det_v1/AiDet $(arg nodelet_manager)" launch-prefix="$(arg launch_prefix_debug)" output="screen">
 
       <!-- Parameters loaded from launch file -->
       <param name="gui" type="bool" value="$(arg gui)"/>
@@ -34,8 +34,8 @@
       <param name="UAV_NAME" type="string" value="$(arg UAV_NAME)"/>
 
       <!-- ROS parameters config file -->
-      <rosparam file="$(find sync_blob_detector)/config/default.yaml" />
-      <rosparam file="$(find sync_blob_detector)/config/$(arg RUN_TYPE).yaml" />
+      <rosparam file="$(find ai_det_v1)/config/default.yaml" />
+      <rosparam file="$(find ai_det_v1)/config/$(arg RUN_TYPE).yaml" />
 
       <!-- Subscribers (note that the topic names will also be remapped using the namespace as a prefix) -->
       <!-- <remap from="~image_in" to="mobius_front/image_raw" /> -->
@@ -43,6 +43,7 @@
       <!-- Timur Uzakov Modification  -->
       <remap from="~image_in" to="/$(arg UAV_NAME)/rgbd_down/color/image_raw/" />
       <remap from="~camera_info_in" to="/$(arg UAV_NAME)/rgbd_down/color/camera_info/" />
+      <remap from="~depth_in" to="/$(arg UAV_NAME)/rgbd_down/aligned_depth_to_color/image_raw" />
       
       <!-- Publishers (note that the topic names will also be remapped using the namespace as a prefix) -->
       <remap from="~test_publisher" to="~image_number" />

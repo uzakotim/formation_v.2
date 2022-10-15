@@ -1,5 +1,0 @@
-<library path="lib/libSyncBlobDet">
-  <class name="sync_blob_detector/SyncBlobDet" type="sync_blob_detector::SyncBlobDet" base_class_type="nodelet::Nodelet">
-    <description>BlobDetect nodelet</description>
-  </class>
-</library>
