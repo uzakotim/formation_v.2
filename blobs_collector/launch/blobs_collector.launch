@@ -1,0 +1,8 @@
+<launch>
+  
+  <node pkg="nodelet" type="nodelet" name="standalone_nodelet"  args="manager" output="screen"/>
+
+  <node pkg="nodelet" type="nodelet" name="BlobsCollectorNode" args="load blobs_collector/BlobsCollectorNode standalone_nodelet" output="screen">
+    <rosparam command="load" file="$(find blobs_collector)/config/cameras.yaml"/>
+  </node>
+</launch>
