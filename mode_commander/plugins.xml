@@ -1,0 +1,7 @@
+<library path="lib/libModeCommanderNode">
+  <class name="mode_commander/ModeCommanderNode" type="mode_commander::ModeCommanderNode" base_class_type="nodelet::Nodelet">
+  <description>
+    This is my nodelet.
+  </description>
+  </class>
+</library>

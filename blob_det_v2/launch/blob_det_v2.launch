@@ -49,7 +49,7 @@
       <remap from="~test_publisher" to="~image_number" />
 
     </node>
-
+    
   </group>
 
 </launch>
