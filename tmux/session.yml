@@ -65,21 +65,24 @@ windows:
       # layout: tiled
       # panes:
         # - waitForOdometry; gz camera -c gzclient_camera -f "uav${UAV_NUMBERS[1]}"; history -s gz camera -c gzclient_camera -f "uav${UAV_NUMBERS[1]}"
-  - uav_1:
+  - uav1:
       layout: tiled
       panes:
         - export UAV_NAME="uav1"; waitForRos; roslaunch --wait blob_det_v2 blob_det_v2.launch 
         - export UAV_NAME="uav1"; export NEIGH_NAME_1="uav2"; NEIGH_NAME_2="uav3";waitForRos; roslaunch --wait sensor_fusion_v2 sensor_fusion_v2.launch 
+        - export UAV_NAME="uav1"; export NEIGH_NAME_1="uav2"; NEIGH_NAME_2="uav3";waitForRos; roslaunch --wait motion_optimiser_v2 motion_optimiser_v2.launch 
   - uav2:
       layout: tiled
       panes:
         - export UAV_NAME="uav2"; waitForRos; roslaunch --wait blob_det_v2 blob_det_v2.launch 
         - export UAV_NAME="uav2"; export NEIGH_NAME_1="uav1"; NEIGH_NAME_2="uav3";waitForRos; roslaunch --wait sensor_fusion_v2 sensor_fusion_v2.launch 
+        - export UAV_NAME="uav2"; export NEIGH_NAME_1="uav1"; NEIGH_NAME_2="uav3";waitForRos; roslaunch --wait motion_optimiser_v2 motion_optimiser_v2.launch 
   - uav3:
       layout: tiled
       panes:
         - export UAV_NAME="uav3"; waitForRos; roslaunch --wait blob_det_v2 blob_det_v2.launch 
         - export UAV_NAME="uav3"; export NEIGH_NAME_1="uav1"; NEIGH_NAME_2="uav2";waitForRos; roslaunch --wait sensor_fusion_v2 sensor_fusion_v2.launch 
+        - export UAV_NAME="uav3"; export NEIGH_NAME_1="uav1"; NEIGH_NAME_2="uav2";waitForRos; roslaunch --wait motion_optimiser_v2 motion_optimiser_v2.launch 
   - gz_rate:
       layout: tiled
       panes:

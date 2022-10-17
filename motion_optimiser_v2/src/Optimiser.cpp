@@ -85,19 +85,15 @@ private:
   // | ---------------------- msg callbacks --------------------- |
 
   // void callbackImage(const sensor_msgs::ImageConstPtr& msg);
-  void                        callbackROBOT(const nav_msgs::OdometryConstPtr& odom_own, const nav_msgs::OdometryConstPtr& odom_neigh1, const nav_msgs::OdometryConstPtr& odom_neigh2, const mrs_msgs::EstimatedStateConstPtr& heading,\
-                                            const mrs_msgs::PoseWithCovarianceArrayStampedConstPtr& points_own, const mrs_msgs::PoseWithCovarianceArrayStampedConstPtr& points_neigh1, const mrs_msgs::PoseWithCovarianceArrayStampedConstPtr& points_neigh2);
+  void                        callbackROBOT(const nav_msgs::OdometryConstPtr& odom_own, const nav_msgs::OdometryConstPtr& odom_neigh1, const nav_msgs::OdometryConstPtr& odom_neigh2, const mrs_msgs::EstimatedStateConstPtr& heading);
 
  // | -------------- msg synchronization ------------------------|
   message_filters::Subscriber<nav_msgs::Odometry> sub_odom_own_;
   message_filters::Subscriber<nav_msgs::Odometry> sub_odom_neigh1_;
   message_filters::Subscriber<nav_msgs::Odometry> sub_odom_neigh2_;
   message_filters::Subscriber<mrs_msgs::EstimatedState> sub_heading_;
-  message_filters::Subscriber<mrs_msgs::PoseWithCovarianceArrayStamped> sub_points_own_;
-  message_filters::Subscriber<mrs_msgs::PoseWithCovarianceArrayStamped> sub_points_neigh1_;
-  message_filters::Subscriber<mrs_msgs::PoseWithCovarianceArrayStamped> sub_points_neigh2_;
 
-  typedef message_filters::sync_policies::ApproximateTime<nav_msgs::Odometry,nav_msgs::Odometry,nav_msgs::Odometry,mrs_msgs::EstimatedState,mrs_msgs::PoseWithCovarianceArrayStamped,mrs_msgs::PoseWithCovarianceArrayStamped,mrs_msgs::PoseWithCovarianceArrayStamped> MySyncPolicy;
+  typedef message_filters::sync_policies::ApproximateTime<nav_msgs::Odometry,nav_msgs::Odometry,nav_msgs::Odometry,mrs_msgs::EstimatedState> MySyncPolicy;
   typedef message_filters::Synchronizer<MySyncPolicy> Sync;
   boost::shared_ptr<Sync> sync_;
 
@@ -114,13 +110,6 @@ private:
   ros::Time  time_last_camera_info_;    // time stamp of the last received camera info message
   uint64_t   msg_counter_   = 0;      // counts the number of images received
   bool       got_odometry_own_          = false;  // indicates whether at least one image message was received
-  bool       got_odometry_neigh1_       = false;  // indicates whether at least one image message was received
-  bool       got_odometry_neigh2_       = false;  // indicates whether at least one image message was received
-  bool       got_heading_               = false;  // indicates whether at least one image message was received
-  bool       got_points_own_            = false;  // indicates whether at least one image message was received
-  bool       got_points_neigh1_         = false;  // indicates whether at least one image message was received
-  bool       got_points_neigh2_         = false;  // indicates whether at least one image message was received
-
   // | --------------- variables for edge detector -------------- |
 
   int       low_threshold_;
@@ -150,11 +139,7 @@ private:
   cv::Point3d center3D;
     
   // | --------------------- other functions -------------------- |
-
-  void publishOpenCVImage(cv::InputArray detected_edges, const std_msgs::Header& header, const std::string& encoding, const image_transport::Publisher& pub);
   void publishImageNumber(uint64_t count);
-  void publishPoints(const std::vector<mrs_msgs::PoseWithCovarianceIdentified> points_array);
- 
   
 };
 
@@ -168,12 +153,6 @@ void Optimiser::onInit() {
   // but remember, always set them to their default value in the header file
   // because, when you add new one later, you might forger to come back here
   got_odometry_own_          = false;  // indicates whether at least one image message was received
-  got_odometry_neigh1_       = false;  // indicates whether at least one image message was received
-  got_odometry_neigh2_       = false;  // indicates whether at least one image message was received
-  got_heading_               = false;  // indicates whether at least one image message was received
-  got_points_own_            = false;  // indicates whether at least one image message was received
-  got_points_neigh1_         = false;  // indicates whether at least one image message was received
-  got_points_neigh2_         = false;
 
 
   /* obtain node handle */
@@ -217,12 +196,9 @@ void Optimiser::onInit() {
   sub_odom_neigh1_.subscribe(nh,"odometry_neigh1_in",100);
   sub_odom_neigh2_.subscribe(nh,"odometry_neigh2_in",100);
   sub_heading_.subscribe(nh,"heading_in",100); 
-  sub_points_own_.subscribe(nh,"points_own_in",100);
-  sub_points_neigh1_.subscribe(nh,"points_neigh1_in",100);
-  sub_points_neigh2_.subscribe(nh,"points_neigh2_in",100);
   
-  sync_.reset(new Sync(MySyncPolicy(10), sub_odom_own_, sub_odom_neigh1_, sub_odom_neigh2_, sub_heading_, sub_points_own_, sub_points_neigh1_,sub_points_neigh2_));
-  sync_->registerCallback(boost::bind(&Optimiser::callbackROBOT, this, _1, _2,_3,_4,_5,_6,_7));
+  sync_.reset(new Sync(MySyncPolicy(10), sub_odom_own_, sub_odom_neigh1_, sub_odom_neigh2_, sub_heading_));
+  sync_->registerCallback(boost::bind(&Optimiser::callbackROBOT, this, _1, _2,_3,_4));
   ROS_INFO_STREAM("subs ok");
   
   // | ------------------ initialize publishers ----------------- |
@@ -242,8 +218,7 @@ void Optimiser::onInit() {
 
 /* callbackImage() method //{ */
 
-void Optimiser::callbackROBOT(const nav_msgs::OdometryConstPtr& odom_own, const nav_msgs::OdometryConstPtr& odom_neigh1, const nav_msgs::OdometryConstPtr& odom_neigh2, const mrs_msgs::EstimatedStateConstPtr& heading,\
-                                            const mrs_msgs::PoseWithCovarianceArrayStampedConstPtr& points_own, const mrs_msgs::PoseWithCovarianceArrayStampedConstPtr& points_neigh1, const mrs_msgs::PoseWithCovarianceArrayStampedConstPtr& points_neigh2){
+void Optimiser::callbackROBOT(const nav_msgs::OdometryConstPtr& odom_own, const nav_msgs::OdometryConstPtr& odom_neigh1, const nav_msgs::OdometryConstPtr& odom_neigh2, const mrs_msgs::EstimatedStateConstPtr& heading){
 
   if (!is_initialized_) {
     return;
@@ -258,12 +233,6 @@ void Optimiser::callbackROBOT(const nav_msgs::OdometryConstPtr& odom_own, const 
   {
     std::scoped_lock lock(mutex_counters_);
     got_odometry_own_          = true;  // indicates whether at least one image message was received
-    got_odometry_neigh1_       = true;  // indicates whether at least one image message was received
-    got_odometry_neigh2_       = true;  // indicates whether at least one image message was received
-    got_heading_               = true;  // indicates whether at least one image message was received
-    got_points_own_            = true;  // indicates whether at least one image message was received
-    got_points_neigh1_         = true;  // indicates whether at least one image message was received
-    got_points_neigh2_         = true;
     msg_counter_++;
     time_last_image_ = ros::Time::now();
   }
@@ -287,24 +256,6 @@ void Optimiser::callbackTimerCheckSubscribers([[maybe_unused]] const ros::TimerE
 
   if (!got_odometry_own_) {
     ROS_WARN_THROTTLE(1.0, "Not received own odometry msgs since node launch.");
-  }
-  if (!got_odometry_neigh1_) {
-    ROS_WARN_THROTTLE(1.0, "Not received neigh1 odometry msgs since node launch.");
-  }
-  if (!got_odometry_neigh2_) {
-    ROS_WARN_THROTTLE(1.0, "Not received neigh2 odometry msgs since node launch.");
-  }
-  if (!got_heading_) {
-    ROS_WARN_THROTTLE(1.0, "Not received heading msg since node launch.");
-  }
-  if (!got_points_own_) {
-    ROS_WARN_THROTTLE(1.0, "Not received points own msg since node launch.");
-  }
-  if (!got_points_neigh1_) {
-    ROS_WARN_THROTTLE(1.0, "Not received points neigh1 msg since node launch.");
-  }
-  if (!got_points_neigh2_) {
-    ROS_WARN_THROTTLE(1.0, "Not received points niegh2 msg since node launch.");
   }
 }
 
