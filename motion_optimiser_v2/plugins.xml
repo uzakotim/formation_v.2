@@ -1,0 +1,5 @@
+<library path="lib/libOptimiser">
+  <class name="motion_optimiser_v2/Optimiser" type="motion_optimiser_v2::Optimiser" base_class_type="nodelet::Nodelet">
+    <description>Optimiser nodelet</description>
+  </class>
+</library>
