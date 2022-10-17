@@ -82,7 +82,7 @@ private:
   std::atomic<bool> is_initialized_ = false;
 
   /* ros parameters */
-  bool _gui_ = true;
+  bool _gui_ = false;
 
   std::string _uav_name_;
 
@@ -542,11 +542,9 @@ void BlobDet::GrabRGBD(const sensor_msgs::ImageConstPtr& msgRGB,const sensor_msg
   /* publish the image with the detected edges */
   BlobDet::publishOpenCVImage(cv_image + drawing, msg_header, color_encoding, pub_projection_);
   
-  if (points_array.size() > 0)
-  {
-    /* publish the center points */
-    BlobDet::publishPoints(points_array);
-  }
+  /* publish the center points */
+  BlobDet::publishPoints(points_array);
+  
   /* publish image count */
   BlobDet::publishImageNumber(image_counter_);
   

@@ -7,9 +7,10 @@
       },
       "includePath": [
         "/home/timur/workspace/devel/include/**",
-        "/opt/ros/noetic/include/**",
         "/home/timur/mrs_workspace/devel/include/**",
+        "/opt/ros/noetic/include/**",
         "/home/timur/workspace/src/formation_v.2/blob_det_v2/include/**",
+        "/home/timur/workspace/src/formation_v.2/blobs_collector/include/**",
         "/home/timur/workspace/src/formation_v.2/cameras_reader/include/**",
         "/home/timur/mrs_workspace/src/uav_core/ros_packages/mavros/libmavconn/include/**",
         "/home/timur/mrs_workspace/src/simulation/ros_packages/mavlink_sitl_gazebo/include/**",

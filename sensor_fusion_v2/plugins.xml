@@ -1,0 +1,5 @@
+<library path="lib/libSensFuse">
+  <class name="sensor_fusion_v2/SensFuse" type="sensor_fusion_v2::SensFuse" base_class_type="nodelet::Nodelet">
+    <description>SensFuse nodelet</description>
+  </class>
+</library>
