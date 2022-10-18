@@ -45,6 +45,7 @@
 #include<thread>
 #include<string>
 #include<vector>
+#include<queue>
 
 #include <message_filters/subscriber.h>
 #include <message_filters/time_synchronizer.h>
@@ -110,10 +111,16 @@ private:
   uint64_t   msg_counter_   = 0;      // counts the number of images received
   bool       got_points_            = false;  // indicates whether at least one image message was received
 
-  // | --------------- variables for edge detector -------------- |
+  // | --------------- variables for center calculation -------------- |
 
-  int       low_threshold_;
-  int const max_low_threshold_ = 100;
+  cv::Point3f center3D;
+  cv::Mat goal_pose;
+  double max_radius;
+  
+  double offset_x;
+  double offset_y;
+  double offset_z;
+  double offset_angle_;
 
   // | ------------- variables for point projection ------------- |
   std::string                                 world_frame_id_;
@@ -127,14 +134,14 @@ private:
 
   ros::Publisher             pub_test_;
   ros::Publisher             pub_points_;
-  image_transport::Publisher pub_edges_;
-  image_transport::Publisher pub_projection_;
+  ros::Publisher             pub_goal_;
   int                        _rate_timer_publish_;
 
   // ------------------------------------------------------------|
     
   // | --------------------- other functions -------------------- |
   void publishImageNumber(uint64_t count);
+  double getAverage(std::vector<double> v);
  
   
 };
@@ -166,11 +173,11 @@ void SensFuse::onInit() {
   param_loader.loadParam("gui", _gui_);
   param_loader.loadParam("rate/publish", _rate_timer_publish_);
   param_loader.loadParam("rate/check_subscribers", _rate_timer_check_subscribers_);
-  param_loader.loadParam("canny_threshold", low_threshold_);
   param_loader.loadParam("world_frame_id", world_frame_id_);
   param_loader.loadParam("world_point/x", world_point_x_);
   param_loader.loadParam("world_point/y", world_point_y_);
   param_loader.loadParam("world_point/z", world_point_z_);
+  param_loader.loadParam("offset_angle/"+_uav_name_, offset_angle_);
 
   if (!param_loader.loadedSuccessfully()) {
     ROS_ERROR("[WaypointFlier]: failed to load non-optional parameters!");
@@ -199,10 +206,14 @@ void SensFuse::onInit() {
   
   // | ------------------ initialize publishers ----------------- |
   pub_test_       = nh.advertise<std_msgs::UInt64>("test_publisher", 1);
+  pub_goal_       = nh.advertise<geometry_msgs::PoseWithCovarianceStamped>("goal", 1);
   ROS_INFO_STREAM("pubs ok");
   // | -------------------- initialize timers ------------------- |
   timer_check_subscribers_ = nh.createTimer(ros::Rate(_rate_timer_check_subscribers_), &SensFuse::callbackTimerCheckSubscribers, this);
   // ------------------------------------------------------------|
+  goal_pose = (cv::Mat_<float>(3,1) << '\0','\0','\0');
+  
+  
   ROS_INFO_ONCE("[SensFuse]: initialized");
 
   is_initialized_ = true;
@@ -232,7 +243,91 @@ void SensFuse::callbackROBOT(const mrs_msgs::PoseWithCovarianceArrayStampedConst
     msg_counter_++;
     time_last_image_ = ros::Time::now();
   }
- 
+  
+  //------------MEASUREMENTS------------------------    
+
+  std::vector<double> all_x,all_y,all_z,all_cov;
+  std::priority_queue<double> all_radius;
+  
+  if (points_own->poses.size() > 0)
+  {
+    for (mrs_msgs::PoseWithCovarianceIdentified point : points_own->poses)
+    {
+        all_x.push_back(point.pose.position.x);
+        all_y.push_back(point.pose.position.y);
+        all_z.push_back(point.pose.position.z);
+    }
+  }
+  if (points_neigh1->poses.size() > 0)
+  {
+    for (mrs_msgs::PoseWithCovarianceIdentified point : points_neigh1->poses)
+    {
+        all_x.push_back(point.pose.position.x);
+        all_y.push_back(point.pose.position.y);
+        all_z.push_back(point.pose.position.z);
+    }
+  }
+  if (points_neigh2->poses.size() > 0)
+  {
+    for (mrs_msgs::PoseWithCovarianceIdentified point : points_neigh2->poses)
+    {
+        all_x.push_back(point.pose.position.x);
+        all_y.push_back(point.pose.position.y);
+        all_z.push_back(point.pose.position.z);
+    }
+  }
+  if (all_x.size() !=0 )
+  {
+      center3D.x = SensFuse::getAverage(all_x);
+      center3D.y = SensFuse::getAverage(all_y);
+      center3D.z = SensFuse::getAverage(all_z);
+      if (points_own->poses.size() > 0)
+      {
+        for (mrs_msgs::PoseWithCovarianceIdentified point : points_own->poses)
+        {
+            double value = std::sqrt(std::pow(point.pose.position.x-center3D.x,2) + std::pow(point.pose.position.y-center3D.y,2));
+            all_radius.push(value);
+        }
+      }
+      if (points_neigh1->poses.size() > 0)
+      {
+        for (mrs_msgs::PoseWithCovarianceIdentified point : points_neigh1->poses)
+        {
+            double value = std::sqrt(std::pow(point.pose.position.x-center3D.x,2) + std::pow(point.pose.position.y-center3D.y,2));
+            all_radius.push(value);
+        }
+      }
+      if (points_neigh2->poses.size() > 0)
+      {
+        for (mrs_msgs::PoseWithCovarianceIdentified point : points_neigh2->poses)
+        {
+            double value = std::sqrt(std::pow(point.pose.position.x-center3D.x,2) + std::pow(point.pose.position.y-center3D.y,2));
+            all_radius.push(value);
+        }
+      }
+      max_radius = all_radius.top();
+      if (max_radius<3.0){
+          max_radius = 3.0;
+      }else
+      {
+          max_radius = 2.0*all_radius.top()/3.0;
+      }
+      offset_x = max_radius*std::cos(offset_angle_);
+      offset_y = max_radius*std::sin(offset_angle_);
+      offset_z = 3.0;
+      
+      goal_pose = (cv::Mat_<float>(3,1) << center3D.x + offset_x,center3D.y + offset_y,center3D.z+offset_z);
+
+      geometry_msgs::PoseWithCovarianceStamped out_msg;
+      out_msg.pose.pose.position.x = goal_pose.at<float>(0);
+      out_msg.pose.pose.position.y = goal_pose.at<float>(1);
+      out_msg.pose.pose.position.z = goal_pose.at<float>(2);
+      out_msg.header.frame_id = _uav_name_ + "/" + "gps_origin";
+      out_msg.header.stamp = ros::Time::now();
+      pub_goal_.publish(out_msg);
+      
+  }
+  
   /* output a text about it */
   ROS_INFO_THROTTLE(1, "[SensFuse]: Total of %u messages synchronised so far", (unsigned int)msg_counter_);
 
@@ -254,11 +349,14 @@ void SensFuse::callbackTimerCheckSubscribers([[maybe_unused]] const ros::TimerEv
     ROS_WARN_THROTTLE(1.0, "Did not synchronise received points msgs since node launch.");
   }
 }
-
 //}
 
 /*| --------- SensFuse Function --------------------------------|*/
-
+double SensFuse::getAverage(std::vector<double> v)
+{
+  return std::accumulate(v.begin(), v.end(), 0.0) / v.size();
+}
+    
 
 }  // namespace sensor_fusion_example
 

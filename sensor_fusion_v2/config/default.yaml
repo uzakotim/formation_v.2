@@ -13,3 +13,8 @@ rate:
   publish: 10 # [Hz]
   # how often check whether msgs are arriving?
   check_subscribers: 1 # [Hz]
+
+offset_angle:
+  uav1: 0.0
+  uav2: 1.5708
+  uav3: -1.5708
