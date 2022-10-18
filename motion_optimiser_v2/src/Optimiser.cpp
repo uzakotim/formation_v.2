@@ -23,6 +23,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <mutex>
+#include <math.h>
 
 /* some OpenCV includes */
 #include <opencv2/opencv.hpp>
@@ -138,9 +139,38 @@ private:
 
   // ------------------------------------------------------------|
 
- 
+  // ----------Formation controller parameters--------------
+  const double n_pos {1.2};
+  const double n_neg {0.5};
+  const double delta_max {50.0};
+  const double delta_min {0.0}; // 0.000001
+  
+  double cost_prev{0};
+  double cost_cur{0};
+
+  double cost_dif{0};
+
+  std::vector<double> grad_cur {0,0}; // 0 0 0 
+  std::vector<double> grad_prev {0,0}; // 0 0 0
+
+  std::vector<double> delta {0.5,0.5};
+  std::vector<double> delta_prev {0.5,0.5};
+
+  size_t k{100};  //computing steps
+  
+  cv::Mat w_prev = (cv::Mat_<double>(2,1) <<  0,0);
+  
+  
+  cv::Mat goal_pose;
+  cv::Mat state;
+  
   // | --------------------- other functions -------------------- |
   void publishImageNumber(uint64_t count);
+  cv::Mat calculateFormation( cv::Mat state,cv::Mat state_neigh1,cv::Mat state_neigh2,cv::Mat goal);
+  double sign(double input);
+  double   Cost(double x,double y,double obs_x,double obs_y, double obs_2_x,double obs_2_y,double goal_x,double goal_y);
+  double grad_x(double x,double y,double obs_x,double obs_y, double obs_2_x,double obs_2_y,double goal_x,double goal_y);
+  double grad_y(double x,double y,double obs_x,double obs_y, double obs_2_x,double obs_2_y,double goal_x,double goal_y);
   
 };
 
@@ -242,14 +272,31 @@ void Optimiser::callbackROBOT(const nav_msgs::OdometryConstPtr& odom_own, const 
     msg_counter_++;
     time_last_image_ = ros::Time::now();
   }
- 
 
+  double own_x = (double)(odom_own->pose.pose.position.x);
+  double own_y = (double)(odom_own->pose.pose.position.y);
+
+  double neigh1_x = (double)(odom_neigh1->pose.pose.position.x);
+  double neigh1_y = (double)(odom_neigh1->pose.pose.position.y);
+
+  double neigh2_x = (double)(odom_neigh2->pose.pose.position.x);
+  double neigh2_y = (double)(odom_neigh2->pose.pose.position.y);
+
+  double goal_x = (double)(goal_msg->pose.pose.position.x);
+  double goal_y = (double)(goal_msg->pose.pose.position.y);
+  double goal_z = (double)(goal_msg->pose.pose.position.z);
+ 
+  cv::Mat state = (cv::Mat_<double>(2,1) << own_x,  own_y);
+  cv::Mat state_neigh1 = (cv::Mat_<double>(2,1) << neigh1_x,  neigh1_y);
+  cv::Mat state_neigh2 = (cv::Mat_<double>(2,1) << neigh2_x, neigh2_y);
+  cv::Mat goal = (cv::Mat_<double>(2,1) << goal_x,goal_y);
+  cv::Mat go_to = Optimiser::calculateFormation(state,state_neigh1,state_neigh2,goal);
   // MRS - waypoint --------------------------------------
   srv.request.header.stamp = ros::Time::now();
   srv.request.header.frame_id = _uav_name_ + "/" + "gps_origin";
-  srv.request.reference.position.x = 3.0;
-  srv.request.reference.position.y = 3.0;
-  srv.request.reference.position.z = 3.0;
+  srv.request.reference.position.x = go_to.at<double>(0) ;
+  srv.request.reference.position.y = go_to.at<double>(1) ;
+  srv.request.reference.position.z = goal_z;
   srv.request.reference.heading    = -0.1; 
   
   if (client.call(srv))
@@ -288,7 +335,88 @@ void Optimiser::callbackTimerCheckSubscribers([[maybe_unused]] const ros::TimerE
 
 /*| --------- Optimiser Function --------------------------------|*/
 
+cv::Mat Optimiser::calculateFormation(cv::Mat state,cv::Mat state_neigh1,cv::Mat state_neigh2,cv::Mat goal)
+{
+    //------------------------------------------------------
+        //------------iRPROP+----------------
+        // goal-driven behaviour
+        cv::Mat w      = (cv::Mat_<double>(2,1) <<  state.at<double>(0),state.at<double>(1));
+        cost_cur    = Optimiser::Cost(state.at<double>(0),state.at<double>(1),state_neigh1.at<double>(0),state_neigh1.at<double>(1),state_neigh2.at<double>(0),state_neigh2.at<double>(1),goal.at<double>(0),goal.at<double>(1));
+        cost_prev   = cost_cur;
+        double gradient_x = Optimiser::grad_x(state.at<double>(0),state.at<double>(1),state_neigh1.at<double>(0),state_neigh1.at<double>(1),state_neigh2.at<double>(0),state_neigh2.at<double>(1),goal.at<double>(0),goal.at<double>(1));
+        double gradient_y = Optimiser::grad_y(state.at<double>(0),state.at<double>(1),state_neigh1.at<double>(0),state_neigh1.at<double>(1),state_neigh2.at<double>(0),state_neigh2.at<double>(1),goal.at<double>(0),goal.at<double>(1));
+        grad_prev = {gradient_x,gradient_y};
+        // -------------------------------------------------- 
+        for(int j=0;j<k;j++)
+        {
+            // Main RPROP loop
+            cost_cur    = Optimiser::Cost(w.at<double>(0),w.at<double>(1),state_neigh1.at<double>(0),state_neigh1.at<double>(1),state_neigh2.at<double>(0),state_neigh2.at<double>(1),goal.at<double>(0),goal.at<double>(1));
+            cost_dif = cost_cur - cost_prev;
+            
+            double gradient_x = Optimiser::grad_x(state.at<double>(0),state.at<double>(1),state_neigh1.at<double>(0),state_neigh1.at<double>(1),state_neigh2.at<double>(0),state_neigh2.at<double>(1),goal.at<double>(0),goal.at<double>(1));
+            double gradient_y = Optimiser::grad_y(state.at<double>(0),state.at<double>(1),state_neigh1.at<double>(0),state_neigh1.at<double>(1),state_neigh2.at<double>(0),state_neigh2.at<double>(1),goal.at<double>(0),goal.at<double>(1));
+            grad_cur = {gradient_x,gradient_y};
+            delta_prev = delta; 
+            for (int i = 0; i<2;i++)
+            {
+                if ((grad_prev[i]*grad_cur[i])>0)
+                {
+                    delta[i] = std::min(delta_prev[i]*n_pos,delta_max);
+                    w_prev.at<double>(i) = w.at<double>(i);
+                    w.at<double>(i) = w.at<double>(i) - Optimiser::sign(grad_cur[i])*delta[i];
+                    grad_prev[i] = grad_cur[i]; 
+                } else if ((grad_prev[i]*grad_cur[i])<0)
+                {
+                    delta[i] = std::max(delta_prev[i]*n_neg,delta_min);
+                    if (cost_cur > cost_prev)
+                    {
+                        w_prev.at<double>(i) = w.at<double>(i);
+                        w.at<double>(i) = w.at<double>(i)-Optimiser::sign(grad_prev[i])*delta_prev[i];
+                    }
+                    grad_prev[i] = 0;
+                } else if ((grad_prev[i]*grad_cur[i])==0)
+                {
+                    w_prev.at<double>(i) = w.at<double>(i);
+                    w.at<double>(i) = w.at<double>(i) - Optimiser::sign(grad_prev[i])*delta[i];
+                    grad_prev[i] = grad_cur[i];
+                }
+            }
+            cost_prev = cost_cur;
+        }
+        ROS_INFO_STREAM("Calculated formation");
+        return w;
+}
+double Optimiser::sign(double input)
+{
+  if (input<0.0)
+  {
+    return -1.0;
+  }
+  return 1.0;
+}
 
+double Optimiser::Cost(double x,double y,double obs_x,double obs_y, double obs_2_x,double obs_2_y,double goal_x,double goal_y)
+{
+  const double width = 5;
+  const double height = 5;
+  const double goal_depth = 5;
+  return 0.01*std::pow((y-goal_y),2) + 0.01*std::pow((x-goal_x),2) + height + height*exp(-(std::pow((y-obs_y),2)/width))*exp(-(std::pow((x-obs_x),2))/width)+ height*exp(-(std::pow((y-obs_2_y),2))/width)*exp(-(std::pow((x-obs_2_x),2)/width)) - goal_depth*exp(-(std::pow((x-goal_x),2)/width))*exp(-(std::pow((y-goal_y),2)/width));
+}
+double Optimiser::grad_x(double x,double y,double obs_x,double obs_y, double obs_2_x,double obs_2_y,double goal_x,double goal_y)
+{
+  const double width = 5;
+  const double height = 5;
+  const double goal_depth = 5;
+  return 0.02*(x-goal_x) + height*exp(-(std::pow((y-obs_y),2))/width)*exp(-(std::pow((x-obs_x),2))/width)*(-(2*(x-obs_x)/width)) + height*exp(-(std::pow((y-obs_2_y),2))/width)*exp(-(std::pow((x-obs_2_x),2))/width)*(-(2*(x-obs_2_x)/width)) - goal_depth*exp(-(std::pow((x-goal_x),2))/width)*exp(-(std::pow((y-goal_y),2)/width))*(-(2*(x-goal_x)/width));
+
+}
+double Optimiser::grad_y(double x,double y,double obs_x,double obs_y, double obs_2_x,double obs_2_y,double goal_x,double goal_y)
+{
+  const double width = 5;
+  const double height = 5;
+  const double goal_depth = 5;
+  return 0.02*(y-goal_y) + height*exp(-(std::pow((y-obs_y),2))/width)*exp(-(std::pow((x-obs_x),2))/width)*(-(2*(y-obs_y)/width)) + height*exp(-(std::pow((y-obs_2_y),2))/width)*exp(-(std::pow((x-obs_2_x),2))/width)*(-(2*(y-obs_2_y)/width)) - goal_depth*exp(-(std::pow((x-goal_x),2))/width)*exp(-(std::pow((y-goal_y),2)/width))*(-(2*(y-goal_y)/width));
+}
 }  // namespace sensor_fusion_example
 
 /* every nodelet must include macros which export the class as a nodelet plugin */
