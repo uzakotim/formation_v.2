@@ -10,6 +10,7 @@
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 #include <geometry_msgs/Point.h>
 #include <geometry_msgs/TransformStamped.h>
+#include <geometry_msgs/PoseWithCovarianceStamped.h>
 
 /* camera image messages */
 #include <sensor_msgs/Image.h>

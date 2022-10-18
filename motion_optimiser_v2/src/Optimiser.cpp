@@ -10,6 +10,7 @@
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 #include <geometry_msgs/Point.h>
 #include <geometry_msgs/TransformStamped.h>
+#include <geometry_msgs/PoseWithCovarianceStamped.h>
 
 /* camera image messages */
 #include <sensor_msgs/Image.h>
@@ -69,6 +70,9 @@ class Optimiser : public nodelet::Nodelet {
 public:
   /* onInit() is called when nodelet is launched (similar to main() in regular node) */
   virtual void onInit();
+  boost::array<float,4> goal = {0.0, 0.0, 0.0, 0.0};
+  ros::ServiceClient client;
+  mrs_msgs::ReferenceStampedSrv srv;
 
 private:
   /* flags */
@@ -85,15 +89,16 @@ private:
   // | ---------------------- msg callbacks --------------------- |
 
   // void callbackImage(const sensor_msgs::ImageConstPtr& msg);
-  void                        callbackROBOT(const nav_msgs::OdometryConstPtr& odom_own, const nav_msgs::OdometryConstPtr& odom_neigh1, const nav_msgs::OdometryConstPtr& odom_neigh2, const mrs_msgs::EstimatedStateConstPtr& heading);
+  void  callbackROBOT(const nav_msgs::OdometryConstPtr& odom_own, const nav_msgs::OdometryConstPtr& odom_neigh1, const nav_msgs::OdometryConstPtr& odom_neigh2, const geometry_msgs::PoseWithCovarianceStampedConstPtr& goal_msg);
 
  // | -------------- msg synchronization ------------------------|
   message_filters::Subscriber<nav_msgs::Odometry> sub_odom_own_;
   message_filters::Subscriber<nav_msgs::Odometry> sub_odom_neigh1_;
   message_filters::Subscriber<nav_msgs::Odometry> sub_odom_neigh2_;
   message_filters::Subscriber<mrs_msgs::EstimatedState> sub_heading_;
+  message_filters::Subscriber<geometry_msgs::PoseWithCovarianceStamped> sub_goal_;
 
-  typedef message_filters::sync_policies::ApproximateTime<nav_msgs::Odometry,nav_msgs::Odometry,nav_msgs::Odometry,mrs_msgs::EstimatedState> MySyncPolicy;
+  typedef message_filters::sync_policies::ApproximateTime<nav_msgs::Odometry,nav_msgs::Odometry,nav_msgs::Odometry,geometry_msgs::PoseWithCovarianceStamped> MySyncPolicy;
   typedef message_filters::Synchronizer<MySyncPolicy> Sync;
   boost::shared_ptr<Sync> sync_;
 
@@ -133,11 +138,7 @@ private:
 
   // ------------------------------------------------------------|
 
-  // | --------- Blob Parameters -------------------------------- |
-  int blob_size = 1000; 
-  cv::Point2d statePt2D;
-  cv::Point3d center3D;
-    
+ 
   // | --------------------- other functions -------------------- |
   void publishImageNumber(uint64_t count);
   
@@ -196,11 +197,16 @@ void Optimiser::onInit() {
   sub_odom_neigh1_.subscribe(nh,"odometry_neigh1_in",100);
   sub_odom_neigh2_.subscribe(nh,"odometry_neigh2_in",100);
   sub_heading_.subscribe(nh,"heading_in",100); 
+  sub_goal_.subscribe(nh,"goal_in",100); 
   
-  sync_.reset(new Sync(MySyncPolicy(10), sub_odom_own_, sub_odom_neigh1_, sub_odom_neigh2_, sub_heading_));
-  sync_->registerCallback(boost::bind(&Optimiser::callbackROBOT, this, _1, _2,_3,_4));
+  sync_.reset(new Sync(MySyncPolicy(10), sub_odom_own_, sub_odom_neigh1_, sub_odom_neigh2_, sub_goal_));
+  sync_->registerCallback(boost::bind(&Optimiser::callbackROBOT, this, _1,_2,_3,_4));
   ROS_INFO_STREAM("subs ok");
-  
+  // | ----------------- service motion publisher ----------------- |
+  client = nh.serviceClient<mrs_msgs::ReferenceStampedSrv>("/"+_uav_name_+"/control_manager/reference");
+  std::string msg_topic = "/" + _uav_name_ + "/control_manager/reference";
+  ROS_INFO_STREAM(msg_topic);
+  ROS_INFO_STREAM("move service ok");
   // | ------------------ initialize publishers ----------------- |
   pub_test_       = nh.advertise<std_msgs::UInt64>("test_publisher", 1);
   ROS_INFO_STREAM("pubs ok");
@@ -218,7 +224,7 @@ void Optimiser::onInit() {
 
 /* callbackImage() method //{ */
 
-void Optimiser::callbackROBOT(const nav_msgs::OdometryConstPtr& odom_own, const nav_msgs::OdometryConstPtr& odom_neigh1, const nav_msgs::OdometryConstPtr& odom_neigh2, const mrs_msgs::EstimatedStateConstPtr& heading){
+void Optimiser::callbackROBOT(const nav_msgs::OdometryConstPtr& odom_own, const nav_msgs::OdometryConstPtr& odom_neigh1, const nav_msgs::OdometryConstPtr& odom_neigh2, const geometry_msgs::PoseWithCovarianceStampedConstPtr& goal_msg){
 
   if (!is_initialized_) {
     return;
@@ -237,6 +243,25 @@ void Optimiser::callbackROBOT(const nav_msgs::OdometryConstPtr& odom_own, const 
     time_last_image_ = ros::Time::now();
   }
  
+
+  // MRS - waypoint --------------------------------------
+  srv.request.header.stamp = ros::Time::now();
+  srv.request.header.frame_id = _uav_name_ + "/" + "gps_origin";
+  srv.request.reference.position.x = 3.0;
+  srv.request.reference.position.y = 3.0;
+  srv.request.reference.position.z = 3.0;
+  srv.request.reference.heading    = -0.1; 
+  
+  if (client.call(srv))
+  {
+      ROS_INFO("Successfull calling service\n");
+  }
+  else 
+  {
+      ROS_ERROR("Could not publish\n");
+  }
+  //---------------------------------------------------------------
+
   /* output a text about it */
   ROS_INFO_THROTTLE(1, "[Optimiser]: Total of %u messages synchronised so far", (unsigned int)msg_counter_);
 

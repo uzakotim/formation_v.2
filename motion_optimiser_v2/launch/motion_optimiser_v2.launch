@@ -47,9 +47,10 @@
       <remap from="~odometry_neigh1_in" to="/$(arg NEIGH_NAME_1)/odometry/odom_main/" />
       <remap from="~odometry_neigh2_in" to="/$(arg NEIGH_NAME_2)/odometry/odom_main/" />
       <remap from="~heading_in" to="/$(arg UAV_NAME)/odometry/heading_state_out/" />
-      <remap from="~points_own_in" to="/$(arg UAV_NAME)/blob_det_v2/points" />
-      <remap from="~points_neigh1_in" to="/$(arg NEIGH_NAME_1)/blob_det_v2/points" />
-      <remap from="~points_neigh2_in" to="/$(arg NEIGH_NAME_2)/blob_det_v2/points" />
+      <!-- <remap from="~points_own_in" to="/$(arg UAV_NAME)/blob_det_v2/points" /> -->
+      <!-- <remap from="~points_neigh1_in" to="/$(arg NEIGH_NAME_1)/blob_det_v2/points" /> -->
+      <!-- <remap from="~points_neigh2_in" to="/$(arg NEIGH_NAME_2)/blob_det_v2/points" /> -->
+      <remap from="~goal_in" to="/$(arg UAV_NAME)/sensor_fusion_v2/goal" />
       
       <!-- Publishers (note that the topic names will also be remapped using the namespace as a prefix) -->
       <remap from="~test_publisher" to="~image_number" />
