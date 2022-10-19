@@ -83,6 +83,19 @@ windows:
         - export UAV_NAME="uav3"; waitForRos; roslaunch --wait blob_det_v2 blob_det_v2.launch 
         - export UAV_NAME="uav3"; export NEIGH_NAME_1="uav1"; NEIGH_NAME_2="uav2";waitForRos; roslaunch --wait sensor_fusion_v2 sensor_fusion_v2.launch 
         - export UAV_NAME="uav3"; export NEIGH_NAME_1="uav1"; NEIGH_NAME_2="uav2";waitForRos; roslaunch --wait motion_optimiser_v2 motion_optimiser_v2.launch 
+  - trigger:
+      layout: tiled
+      synchronize: after
+      panes:
+        - 'export UAV_NAME1="uav1"; export UAV_NAME2="uav2"; export UAV_NAME3="uav3";
+          history -s rosservice call /$UAV_NAME1/trigger_formation;
+          '
+        - 'export UAV_NAME1="uav1"; export UAV_NAME2="uav2"; export UAV_NAME3="uav3";
+          history -s rosservice call /$UAV_NAME2/trigger_formation;
+          '
+        - 'export UAV_NAME1="uav1"; export UAV_NAME2="uav2"; export UAV_NAME3="uav3";
+          history -s rosservice call /$UAV_NAME3/trigger_formation; 
+          '
   - gz_rate:
       layout: tiled
       panes:

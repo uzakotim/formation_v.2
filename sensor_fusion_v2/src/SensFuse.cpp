@@ -313,6 +313,7 @@ void SensFuse::callbackROBOT(const mrs_msgs::PoseWithCovarianceArrayStampedConst
       {
           max_radius = 2.0*all_radius.top()/3.0;
       }
+      ROS_INFO_STREAM("Centroid: "<<center3D.x<<", "<<center3D.y);
       offset_x = max_radius*std::cos(offset_angle_);
       offset_y = max_radius*std::sin(offset_angle_);
       offset_z = 3.0;
