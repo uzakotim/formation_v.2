@@ -76,7 +76,7 @@ public:
   boost::array<float,4> goal = {0.0, 0.0, 0.0, 0.0};
   ros::ServiceClient client;
   mrs_msgs::ReferenceStampedSrv srv;
-  bool allow_motion = false;
+  int allow_motion = -1;
 
 private:
   /* flags */
@@ -307,7 +307,7 @@ void Optimiser::callbackROBOT(const nav_msgs::OdometryConstPtr& odom_own, const 
   srv.request.reference.position.z = goal_z;
   srv.request.reference.heading    = -0.1; 
   
-  if (allow_motion){
+  if (allow_motion > 0){
       if (client.call(srv))
       {
           ROS_INFO("Successfull calling service\n");
@@ -344,8 +344,7 @@ void Optimiser::callbackTimerCheckSubscribers([[maybe_unused]] const ros::TimerE
 //}
 bool Optimiser::callback_trigger(std_srvs::Trigger::Request  &req, std_srvs::Trigger::Response &res)
 {
-    ROS_INFO_STREAM("IT WORKS: "<<allow_motion);
-    allow_motion = !allow_motion;
+    allow_motion = -1*allow_motion;
     return allow_motion;
 }
 
