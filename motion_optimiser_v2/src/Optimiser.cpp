@@ -66,6 +66,7 @@
 namespace motion_optimiser_v2
 {
 
+using namespace Eigen;
 /* class Optimiser //{ */
 
 class Optimiser : public nodelet::Nodelet {
@@ -318,7 +319,7 @@ void Optimiser::callbackROBOT(const nav_msgs::OdometryConstPtr& odom_own, const 
       }
   }
   //---------------------------------------------------------------
-
+  ros::Duration(0.1).sleep();
   /* output a text about it */
   ROS_INFO_THROTTLE(1, "[Optimiser]: Total of %u messages synchronised so far", (unsigned int)msg_counter_);
 
@@ -345,7 +346,7 @@ void Optimiser::callbackTimerCheckSubscribers([[maybe_unused]] const ros::TimerE
 bool Optimiser::callback_trigger(std_srvs::Trigger::Request  &req, std_srvs::Trigger::Response &res)
 {
     allow_motion = -1*allow_motion;
-    return allow_motion;
+    return true;
 }
 
 /*| --------- Optimiser Function --------------------------------|*/

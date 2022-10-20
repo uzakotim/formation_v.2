@@ -23,6 +23,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <mutex>
+#include <eigen3/Eigen/Eigen>
 
 /* some OpenCV includes */
 #include <opencv2/opencv.hpp>
@@ -47,6 +48,7 @@
 #include<string>
 #include<vector>
 #include<queue>
+#include<tuple>
 
 #include <message_filters/subscriber.h>
 #include <message_filters/time_synchronizer.h>
@@ -64,7 +66,20 @@
 namespace sensor_fusion_v2
 {
 
+using namespace Eigen;
 /* class SensFuse //{ */
+typedef Eigen::Matrix<double, 9, 9> Matrix9x9d;
+typedef Eigen::Matrix<double, 6, 6> Matrix6x6d;
+typedef Eigen::Matrix<double, 6, 3> Matrix6x3d;
+typedef Eigen::Matrix<double, 6, 9> Matrix6x9d;
+typedef Eigen::Matrix<double, 9, 3> Matrix9x3d;
+typedef Eigen::Matrix<double, 9, 6> Matrix9x6d;
+typedef Eigen::Matrix<double, 3, 6> Matrix3x6d;
+typedef Eigen::Matrix<double, 3, 9> Matrix3x9d;
+typedef Eigen::Matrix<double, 3, 3> Matrix3x3d;
+typedef Eigen::Matrix<double, 6, 1> Vector6d;
+typedef Eigen::Matrix<double, 3, 1> Vector3d;
+typedef Eigen::Matrix<double, 9, 1> Vector9d;
 
 class SensFuse : public nodelet::Nodelet {
 
@@ -139,11 +154,19 @@ private:
   int                        _rate_timer_publish_;
 
   // ------------------------------------------------------------|
-    
+  Vector3d init_input;
+  Matrix6x6d Q;
+  Matrix3x3d R;
+
+  Vector6d new_x;
+  Matrix6x6d new_cov;
+  double w_q = 1.0;
+  double w_r = 50.0;
   // | --------------------- other functions -------------------- |
   void publishImageNumber(uint64_t count);
   double getAverage(std::vector<double> v);
- 
+  std::tuple<Vector6d, Matrix6x6d> lkfPredict(const Vector6d &x, const Matrix6x6d &x_cov, const double &dt); 
+  std::tuple<Vector6d, Matrix6x6d> lkfCorrect(const Vector6d &x, const Matrix6x6d &x_cov, const Vector3d &measurement, const double &dt);
   
 };
 
@@ -214,7 +237,22 @@ void SensFuse::onInit() {
   // ------------------------------------------------------------|
   goal_pose = (cv::Mat_<float>(3,1) << '\0','\0','\0');
   
+  // --------------------------------KF  -------------------------|
+
+  this->Q << w_q,0,0,0,0,0,
+             0,w_q,0,0,0,0,
+             0,0,w_q,0,0,0,
+             0,0,0,w_q,0,0,
+             0,0,0,0,w_q,0,
+             0,0,0,0,0,w_q;
   
+  this->R << w_r,0,0,
+             0,w_r,0,
+             0,0,w_r;
+
+  this->new_x << 0,0,0,0,0,0;
+  this->new_cov.setIdentity();
+
   ROS_INFO_ONCE("[SensFuse]: initialized");
 
   is_initialized_ = true;
@@ -282,6 +320,16 @@ void SensFuse::callbackROBOT(const mrs_msgs::PoseWithCovarianceArrayStampedConst
       center3D.x = SensFuse::getAverage(all_x);
       center3D.y = SensFuse::getAverage(all_y);
       center3D.z = SensFuse::getAverage(all_z);
+
+      Vector3d measurement;
+      measurement << center3D.x,center3D.y,center3D.z;
+  
+      std::tie(new_x,new_cov) = SensFuse::lkfPredict(new_x,new_cov,dt);
+      std::tie(new_x,new_cov) = SensFuse::lkfCorrect(new_x,new_cov,measurement,dt);
+
+      center3D.x = new_x(0);
+      center3D.y = new_x(1);
+      center3D.z = new_x(2);
       if (points_own->poses.size() > 0)
       {
         for (mrs_msgs::PoseWithCovarianceIdentified point : points_own->poses)
@@ -327,9 +375,11 @@ void SensFuse::callbackROBOT(const mrs_msgs::PoseWithCovarianceArrayStampedConst
       out_msg.header.frame_id = _uav_name_ + "/" + "gps_origin";
       out_msg.header.stamp = ros::Time::now();
       pub_goal_.publish(out_msg);
+
       
   }
   
+  ros::Duration(0.01).sleep();
   /* output a text about it */
   ROS_INFO_THROTTLE(1, "[SensFuse]: Total of %u messages synchronised so far", (unsigned int)msg_counter_);
 
@@ -358,7 +408,49 @@ double SensFuse::getAverage(std::vector<double> v)
 {
   return std::accumulate(v.begin(), v.end(), 0.0) / v.size();
 }
-    
+
+std::tuple<Vector6d, Matrix6x6d> SensFuse::lkfPredict(const Vector6d &x, const Matrix6x6d &x_cov, const double &dt) {
+
+  // x[k+1] = A*x[k] + B*u[k]
+  Matrix6x6d A; 
+  A <<1,0,0,dt,0,0,
+      0,1,0,0,dt,0,
+      0,0,1,0,0,dt,
+      
+      0,0,0,1,0,0,
+      0,0,0,0,1,0,
+      0,0,0,0,0,1;
+
+  Vector6d   new_x;      // the updated state vector, x[k+1]
+  Matrix6x6d new_x_cov;  // the updated covariance matrix
+
+  // PUT YOUR CODE HERE
+  new_x = A*x;
+  new_x_cov = A*x_cov*A.transpose()+Q;
+  
+  return {new_x, new_x_cov};
+}
+std::tuple<Vector6d, Matrix6x6d> SensFuse::lkfCorrect(const Vector6d &x, const Matrix6x6d &x_cov, const Vector3d &measurement, const double &dt) {
+
+  Vector6d   new_x;      // the updated state vector, x[k+1]
+  Matrix6x6d new_x_cov;  // the updated covariance matrix
+
+  Matrix3x6d H;
+  H << 1,0,0,0,0,0,
+       0,1,0,0,0,0,
+       0,0,1,0,0,0;
+  // Kalman Gain
+  Matrix6x3d K = x_cov*H.transpose()*((H*x_cov*H.transpose()+R).inverse()); 
+  // update
+  new_x = x+K*(measurement-H*x);
+
+  Matrix6x6d Id6x6;
+  Id6x6.setIdentity();
+
+  new_x_cov = (Id6x6 - K*H)*x_cov;
+  return {new_x, new_x_cov};
+}
+
 
 }  // namespace sensor_fusion_example
 

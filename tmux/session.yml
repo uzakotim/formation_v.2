@@ -22,8 +22,8 @@ windows:
       layout: tiled
       panes:
         - waitForSimulation; rosservice call /mrs_drone_spawner/spawn "1 $UAV_TYPE_LEADER --enable-rangefinder --enable-realsense-down --enable-realsense-front --pos 0 0 2 0.0"
-        - waitForSimulation; rosservice call /mrs_drone_spawner/spawn "2 $UAV_TYPE_LEADER --enable-rangefinder --enable-realsense-down --enable-realsense-front --pos 4 4 2 0.0"
-        - waitForSimulation; rosservice call /mrs_drone_spawner/spawn "3 $UAV_TYPE_LEADER --enable-rangefinder --enable-realsense-down --enable-realsense-front --pos -4 -4 2 0.0"
+        - waitForSimulation; rosservice call /mrs_drone_spawner/spawn "2 $UAV_TYPE_LEADER --enable-rangefinder --enable-realsense-down --enable-realsense-front --pos 4 0 2 0.0"
+        - waitForSimulation; rosservice call /mrs_drone_spawner/spawn "3 $UAV_TYPE_LEADER --enable-rangefinder --enable-realsense-down --enable-realsense-front --pos 0 4 2 0.0"
   - control:
       layout: tiled
       panes:
@@ -96,7 +96,7 @@ windows:
         - 'export UAV_NAME1="uav1"; export UAV_NAME2="uav2"; export UAV_NAME3="uav3";
           history -s rosservice call /$UAV_NAME3/trigger_formation; 
           '
-  - gz_rate:
-      layout: tiled
-      panes:
-        - waitForOdometry; sleep 5; gz physics -u 125
+  # - gz_rate:
+      # layout: tiled
+      # panes:
+        # - waitForOdometry; sleep 5; gz physics -u 125

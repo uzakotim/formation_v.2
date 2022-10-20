@@ -547,7 +547,7 @@ void BlobDet::GrabRGBD(const sensor_msgs::ImageConstPtr& msgRGB,const sensor_msg
   
   /* publish image count */
   BlobDet::publishImageNumber(image_counter_);
-  
+  ros::Duration(0.001).sleep();
   if (_gui_) {
     /* !!! needed by OpenCV to correctly show the images using cv::imshow !!! */
     cv::waitKey(1);
