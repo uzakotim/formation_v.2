@@ -77,11 +77,11 @@ public:
   boost::array<float,4> goal = {0.0, 0.0, 0.0, 0.0};
   ros::ServiceClient client;
   mrs_msgs::ReferenceStampedSrv srv;
-  int allow_motion = -1;
 
 private:
   /* flags */
   std::atomic<bool> is_initialized_ = false;
+  std::atomic<bool> allow_motion_   = false;
 
   /* ros parameters */
   bool _gui_ = false;
@@ -146,7 +146,7 @@ private:
   // ----------Formation controller parameters--------------
   const double n_pos {1.2};
   const double n_neg {0.5};
-  const double delta_max {50.0};
+  const double delta_max {1.0}; // 50
   const double delta_min {0.0}; // 0.000001
   
   double cost_prev{0};
@@ -160,7 +160,7 @@ private:
   std::vector<double> delta {0.5,0.5};
   std::vector<double> delta_prev {0.5,0.5};
 
-  size_t k{5};  //computing steps
+  size_t k{3};  //computing steps
   
   cv::Mat w_prev = (cv::Mat_<double>(2,1) <<  0,0);
   
@@ -308,7 +308,7 @@ void Optimiser::callbackROBOT(const nav_msgs::OdometryConstPtr& odom_own, const 
   srv.request.reference.position.z = goal_z;
   srv.request.reference.heading    = -0.1; 
   
-  if (allow_motion > 0){
+  if (allow_motion_){
       if (client.call(srv))
       {
           ROS_INFO("Successfull calling service\n");
@@ -345,7 +345,10 @@ void Optimiser::callbackTimerCheckSubscribers([[maybe_unused]] const ros::TimerE
 //}
 bool Optimiser::callback_trigger(std_srvs::Trigger::Request  &req, std_srvs::Trigger::Response &res)
 {
-    allow_motion = -1*allow_motion;
+    if (!is_initialized_) {
+      return false;
+    }
+    allow_motion_ = !allow_motion_;
     return true;
 }
 
