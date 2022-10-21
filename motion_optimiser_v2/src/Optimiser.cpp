@@ -160,7 +160,7 @@ private:
   std::vector<double> delta {0.5,0.5};
   std::vector<double> delta_prev {0.5,0.5};
 
-  size_t k{3};  //computing steps
+  size_t k{25};  //computing steps
   
   cv::Mat w_prev = (cv::Mat_<double>(2,1) <<  0,0);
   
@@ -172,9 +172,9 @@ private:
   void publishImageNumber(uint64_t count);
   std::vector<double> calculateFormation( cv::Mat state,cv::Mat state_neigh1,cv::Mat state_neigh2,cv::Mat goal);
   double sign(double input);
-  double Cost(double x,double y,double obs_x,double obs_y, double obs_2_x,double obs_2_y,double goal_x,double goal_y);
-  double grad_x(double x,double y,double obs_x,double obs_y, double obs_2_x,double obs_2_y,double goal_x,double goal_y);
-  double grad_y(double x,double y,double obs_x,double obs_y, double obs_2_x,double obs_2_y,double goal_x,double goal_y);
+  double Cost(double x,double y,double x_prev,double y_prev,double obs_x,double obs_y, double obs_2_x,double obs_2_y,double goal_x,double goal_y);
+  double grad_x(double x,double y,double x_prev,double y_prev,double obs_x,double obs_y, double obs_2_x,double obs_2_y,double goal_x,double goal_y);
+  double grad_y(double x,double y,double x_prev,double y_prev,double obs_x,double obs_y, double obs_2_x,double obs_2_y,double goal_x,double goal_y);
   bool callback_trigger(std_srvs::Trigger::Request  &req, std_srvs::Trigger::Response &res);
   
 };
@@ -361,20 +361,20 @@ std::vector<double> Optimiser::calculateFormation(cv::Mat state,cv::Mat state_ne
         // goal-driven behaviour
         std::vector<double> w = {state.at<double>(0),state.at<double>(1)};
         std::vector<double> w_prev = {state.at<double>(0),state.at<double>(1)};
-        cost_cur    = Optimiser::Cost(state.at<double>(0),state.at<double>(1),state_neigh1.at<double>(0),state_neigh1.at<double>(1),state_neigh2.at<double>(0),state_neigh2.at<double>(1),goal.at<double>(0),goal.at<double>(1));
+        cost_cur    = Optimiser::Cost(state.at<double>(0),state.at<double>(1),w_prev[0],w_prev[1],state_neigh1.at<double>(0),state_neigh1.at<double>(1),state_neigh2.at<double>(0),state_neigh2.at<double>(1),goal.at<double>(0),goal.at<double>(1));
         cost_prev   = cost_cur;
-        double gradient_x = Optimiser::grad_x(state.at<double>(0),state.at<double>(1),state_neigh1.at<double>(0),state_neigh1.at<double>(1),state_neigh2.at<double>(0),state_neigh2.at<double>(1),goal.at<double>(0),goal.at<double>(1));
-        double gradient_y = Optimiser::grad_y(state.at<double>(0),state.at<double>(1),state_neigh1.at<double>(0),state_neigh1.at<double>(1),state_neigh2.at<double>(0),state_neigh2.at<double>(1),goal.at<double>(0),goal.at<double>(1));
+        double gradient_x = Optimiser::grad_x(state.at<double>(0),w_prev[0],w_prev[1],state.at<double>(1),state_neigh1.at<double>(0),state_neigh1.at<double>(1),state_neigh2.at<double>(0),state_neigh2.at<double>(1),goal.at<double>(0),goal.at<double>(1));
+        double gradient_y = Optimiser::grad_y(state.at<double>(0),w_prev[0],w_prev[1],state.at<double>(1),state_neigh1.at<double>(0),state_neigh1.at<double>(1),state_neigh2.at<double>(0),state_neigh2.at<double>(1),goal.at<double>(0),goal.at<double>(1));
         grad_prev = {gradient_x,gradient_y};
         // -------------------------------------------------- 
         for(int j=0;j<k;j++)
         {
             // Main RPROP loop
-            cost_cur = Optimiser::Cost(w[0],w[1],state_neigh1.at<double>(0),state_neigh1.at<double>(1),state_neigh2.at<double>(0),state_neigh2.at<double>(1),goal.at<double>(0),goal.at<double>(1));
+            cost_cur = Optimiser::Cost(w[0],w[1],w_prev[0],w_prev[1],state_neigh1.at<double>(0),state_neigh1.at<double>(1),state_neigh2.at<double>(0),state_neigh2.at<double>(1),goal.at<double>(0),goal.at<double>(1));
             cost_dif = cost_cur - cost_prev;
             
-            gradient_x = Optimiser::grad_x(w[0],w[1],state_neigh1.at<double>(0),state_neigh1.at<double>(1),state_neigh2.at<double>(0),state_neigh2.at<double>(1),goal.at<double>(0),goal.at<double>(1));
-            gradient_y = Optimiser::grad_y(w[0],w[1],state_neigh1.at<double>(0),state_neigh1.at<double>(1),state_neigh2.at<double>(0),state_neigh2.at<double>(1),goal.at<double>(0),goal.at<double>(1));
+            gradient_x = Optimiser::grad_x(w[0],w[1],w_prev[0],w_prev[1],state_neigh1.at<double>(0),state_neigh1.at<double>(1),state_neigh2.at<double>(0),state_neigh2.at<double>(1),goal.at<double>(0),goal.at<double>(1));
+            gradient_y = Optimiser::grad_y(w[0],w[1],w_prev[0],w_prev[1],state_neigh1.at<double>(0),state_neigh1.at<double>(1),state_neigh2.at<double>(0),state_neigh2.at<double>(1),goal.at<double>(0),goal.at<double>(1));
             grad_cur = {gradient_x,gradient_y};
             delta_prev = delta; 
             for (int i = 0; i<2;i++)
@@ -414,27 +414,27 @@ double Optimiser::sign(double input)
   return 1.0;
 }
 
-double Optimiser::Cost(double x,double y,double obs_x,double obs_y, double obs_2_x,double obs_2_y,double goal_x,double goal_y)
+double Optimiser::Cost(double x,double y,double x_prev,double y_prev,double obs_x,double obs_y, double obs_2_x,double obs_2_y,double goal_x,double goal_y)
 {
-  const double width = 5;
+  const double width = 50;
   const double height = 5;
   const double goal_depth = 5;
-  return 0.01*std::pow((y-goal_y),2) + 0.01*std::pow((x-goal_x),2) + height + height*std::exp(-(std::pow((y-obs_y),2)/width))*std::exp(-(std::pow((x-obs_x),2))/width)+ height*std::exp(-std::pow((y-obs_2_y),2)/width)*exp(-std::pow((x-obs_2_x),2)/width) - goal_depth*std::exp(-std::pow((x-goal_x),2)/width)*std::exp(-(std::pow((y-goal_y),2)/width));
+  return 0.0005*std::pow((x-x_prev),2) + 0.5*std::pow((y-y_prev),2) + 0.01*std::pow((y-goal_y),2) + 0.01*std::pow((x-goal_x),2) + height + height*std::exp(-(std::pow((y-obs_y),2)/width))*std::exp(-(std::pow((x-obs_x),2))/width)+ height*std::exp(-std::pow((y-obs_2_y),2)/width)*exp(-std::pow((x-obs_2_x),2)/width) - goal_depth*std::exp(-std::pow((x-goal_x),2)/width)*std::exp(-(std::pow((y-goal_y),2)/width));
 }
-double Optimiser::grad_x(double x,double y,double obs_x,double obs_y, double obs_2_x,double obs_2_y,double goal_x,double goal_y)
+double Optimiser::grad_x(double x,double y,double x_prev,double y_prev,double obs_x,double obs_y, double obs_2_x,double obs_2_y,double goal_x,double goal_y)
 {
-  const double width = 5;
+  const double width = 50;
   const double height = 5;
   const double goal_depth = 5;
-  return 0.02*(x-goal_x) + height*std::exp(-(std::pow((y-obs_y),2))/width)*std::exp(-(std::pow((x-obs_x),2))/width)*(-(2*(x-obs_x)/width)) + height*std::exp(-(std::pow((y-obs_2_y),2))/width)*std::exp(-(std::pow((x-obs_2_x),2))/width)*(-(2*(x-obs_2_x)/width)) - goal_depth*std::exp(-(std::pow((x-goal_x),2))/width)*std::exp(-(std::pow((y-goal_y),2)/width))*(-(2*(x-goal_x)/width));
+  return 0.001*(x-x_prev) + 0.02*(x-goal_x) + height*std::exp(-(std::pow((y-obs_y),2))/width)*std::exp(-(std::pow((x-obs_x),2))/width)*(-(2*(x-obs_x)/width)) + height*std::exp(-(std::pow((y-obs_2_y),2))/width)*std::exp(-(std::pow((x-obs_2_x),2))/width)*(-(2*(x-obs_2_x)/width)) - goal_depth*std::exp(-(std::pow((x-goal_x),2))/width)*std::exp(-(std::pow((y-goal_y),2)/width))*(-(2*(x-goal_x)/width));
 
 }
-double Optimiser::grad_y(double x,double y,double obs_x,double obs_y, double obs_2_x,double obs_2_y,double goal_x,double goal_y)
+double Optimiser::grad_y(double x,double y,double x_prev,double y_prev,double obs_x,double obs_y, double obs_2_x,double obs_2_y,double goal_x,double goal_y)
 {
-  const double width = 5;
+  const double width = 50;
   const double height = 5;
   const double goal_depth = 5;
-  return 0.02*(y-goal_y) + height*std::exp(-(std::pow((y-obs_y),2))/width)*std::exp(-(std::pow((x-obs_x),2))/width)*(-(2*(y-obs_y)/width)) + height*std::exp(-(std::pow((y-obs_2_y),2))/width)*std::exp(-(std::pow((x-obs_2_x),2))/width)*(-(2*(y-obs_2_y)/width)) - goal_depth*std::exp(-(std::pow((x-goal_x),2))/width)*std::exp(-(std::pow((y-goal_y),2)/width))*(-(2*(y-goal_y)/width));
+  return 0.001*(y-y_prev) + 0.02*(y-goal_y) + height*std::exp(-(std::pow((y-obs_y),2))/width)*std::exp(-(std::pow((x-obs_x),2))/width)*(-(2*(y-obs_y)/width)) + height*std::exp(-(std::pow((y-obs_2_y),2))/width)*std::exp(-(std::pow((x-obs_2_x),2))/width)*(-(2*(y-obs_2_y)/width)) - goal_depth*std::exp(-(std::pow((x-goal_x),2))/width)*std::exp(-(std::pow((y-goal_y),2)/width))*(-(2*(y-goal_y)/width));
 }
 }  // namespace sensor_fusion_example
 

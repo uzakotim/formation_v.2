@@ -354,17 +354,19 @@ void SensFuse::callbackROBOT(const mrs_msgs::PoseWithCovarianceArrayStampedConst
             all_radius.push(value);
         }
       }
-      max_radius = all_radius.top();
-      if (max_radius<3.0){
-          max_radius = 3.0;
-      }else
-      {
-          max_radius = 2.0*all_radius.top()/3.0;
-      }
+      // max_radius = all_radius.top();
+      max_radius = 2;
+      // if (max_radius<3.0){
+          // max_radius = 3.0;
+      // }else
+      // {
+          // max_radius = 0.5*all_radius.top();
+          // max_radius = 0.5*all_radius.top();
+      // }
       ROS_INFO_STREAM("Centroid: "<<center3D.x<<", "<<center3D.y);
       offset_x = max_radius*std::cos(offset_angle_);
       offset_y = max_radius*std::sin(offset_angle_);
-      offset_z = 3.0;
+      offset_z = 5.0;
       
       goal_pose = (cv::Mat_<float>(3,1) << center3D.x + offset_x,center3D.y + offset_y,center3D.z+offset_z);
 

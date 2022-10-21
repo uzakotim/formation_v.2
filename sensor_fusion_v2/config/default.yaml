@@ -15,6 +15,6 @@ rate:
   check_subscribers: 1 # [Hz]
 
 offset_angle:
-  uav1: 0.0
-  uav2: 1.5708
-  uav3: -1.5708
+  uav1:  0.0
+  uav2:  2.0944
+  uav3: -2.0944
