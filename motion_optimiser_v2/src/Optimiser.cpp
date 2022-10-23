@@ -82,6 +82,7 @@ private:
   /* flags */
   std::atomic<bool> is_initialized_ = false;
   std::atomic<bool> allow_motion_   = false;
+  std::atomic<bool> select_mode_    = false;
 
   /* ros parameters */
   bool _gui_ = false;
@@ -142,7 +143,8 @@ private:
   int                        _rate_timer_publish_;
 
   // ------------------------------------------------------------|
-  ros::ServiceServer service_;
+  ros::ServiceServer service_motion_;
+  ros::ServiceServer service_mode_;
   // ----------Formation controller parameters--------------
   const double n_pos {1.2};
   const double n_neg {0.5};
@@ -175,7 +177,8 @@ private:
   double Cost(double x,double y,double x_prev,double y_prev,double obs_x,double obs_y, double obs_2_x,double obs_2_y,double goal_x,double goal_y);
   double grad_x(double x,double y,double x_prev,double y_prev,double obs_x,double obs_y, double obs_2_x,double obs_2_y,double goal_x,double goal_y);
   double grad_y(double x,double y,double x_prev,double y_prev,double obs_x,double obs_y, double obs_2_x,double obs_2_y,double goal_x,double goal_y);
-  bool callback_trigger(std_srvs::Trigger::Request  &req, std_srvs::Trigger::Response &res);
+  bool callback_trigger_motion(std_srvs::Trigger::Request  &req, std_srvs::Trigger::Response &res);
+  bool callback_trigger_mode(std_srvs::Trigger::Request  &req, std_srvs::Trigger::Response &res);
   
 };
 
@@ -248,8 +251,10 @@ void Optimiser::onInit() {
   // | -------------------- initialize timers ------------------- |
   timer_check_subscribers_ = nh.createTimer(ros::Rate(_rate_timer_check_subscribers_), &Optimiser::callbackTimerCheckSubscribers, this);
   // | -----------------------trigger    ------------------------ |
-  std::string node_trigger = "/" +_uav_name_ +"/trigger_formation";
-  service_ = nh.advertiseService(node_trigger, &Optimiser::callback_trigger,this);
+  std::string trigger_motion = "/" +_uav_name_ +"/trigger_motion";
+  std::string trigger_mode = "/" +_uav_name_ +"/trigger_mode";
+  service_motion_ = nh.advertiseService(trigger_motion, &Optimiser::callback_trigger_motion,this);
+  service_mode_   = nh.advertiseService(trigger_mode, &Optimiser::callback_trigger_mode,this);
   // ------------------------------------------------------------|
   ROS_INFO_ONCE("[Optimiser]: initialized");
 
@@ -307,7 +312,25 @@ void Optimiser::callbackROBOT(const nav_msgs::OdometryConstPtr& odom_own, const 
   srv.request.reference.position.y = go_to[1];
   srv.request.reference.position.z = goal_z;
   srv.request.reference.heading    = -0.1; 
+
+  if (select_mode_) 
+  {
+    ROS_INFO("Mode: form formation");
+  } 
+  else 
+  {
+    ROS_INFO("Mode: search");
+  }
   
+  if (allow_motion_)
+  {
+    ROS_INFO("State: moving");
+  }
+  else
+  {
+    ROS_INFO("State: not moving");
+  }
+
   if (allow_motion_){
       if (client.call(srv))
       {
@@ -343,12 +366,20 @@ void Optimiser::callbackTimerCheckSubscribers([[maybe_unused]] const ros::TimerE
 }
 
 //}
-bool Optimiser::callback_trigger(std_srvs::Trigger::Request  &req, std_srvs::Trigger::Response &res)
+bool Optimiser::callback_trigger_motion(std_srvs::Trigger::Request  &req, std_srvs::Trigger::Response &res)
 {
     if (!is_initialized_) {
       return false;
     }
     allow_motion_ = !allow_motion_;
+    return true;
+}
+bool Optimiser::callback_trigger_mode(std_srvs::Trigger::Request  &req, std_srvs::Trigger::Response &res)
+{
+    if (!is_initialized_) {
+      return false;
+    }
+    select_mode_ = !select_mode_;
     return true;
 }
 
