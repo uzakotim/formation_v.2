@@ -87,20 +87,20 @@ windows:
       layout: tiled
       panes:
         - waitForRos; roslaunch  mode_commander mode_commander.launch
-  - trigger:
-      layout: tiled
-      synchronize: after
-      panes:
-        - 'export UAV_NAME1="uav1"; export UAV_NAME2="uav2"; export UAV_NAME3="uav3";
-          history -s rosservice call /$UAV_NAME1/trigger_formation;
-          '
-        - 'export UAV_NAME1="uav1"; export UAV_NAME2="uav2"; export UAV_NAME3="uav3";
-          history -s rosservice call /$UAV_NAME2/trigger_formation;
-          '
-        - 'export UAV_NAME1="uav1"; export UAV_NAME2="uav2"; export UAV_NAME3="uav3";
-          history -s rosservice call /$UAV_NAME3/trigger_formation; 
-          '
+  # - trigger:
+  #     layout: tiled
+  #     synchronize: after
+  #     panes:
+  #       - 'export UAV_NAME1="uav1"; export UAV_NAME2="uav2"; export UAV_NAME3="uav3";
+  #         history -s rosservice call /$UAV_NAME1/trigger_formation;
+  #         '
+  #       - 'export UAV_NAME1="uav1"; export UAV_NAME2="uav2"; export UAV_NAME3="uav3";
+  #         history -s rosservice call /$UAV_NAME2/trigger_formation;
+  #         '
+  #       - 'export UAV_NAME1="uav1"; export UAV_NAME2="uav2"; export UAV_NAME3="uav3";
+  #         history -s rosservice call /$UAV_NAME3/trigger_formation; 
+          # '
   - gz_rate:
       layout: tiled
       panes:
-        - waitForOdometry; sleep 5; gz physics -u 125
+        - waitForOdometry; sleep 5; gz physics -u 250 #125

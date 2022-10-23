@@ -84,6 +84,12 @@ private:
   std::atomic<bool> allow_motion_   = false;
   std::atomic<bool> select_mode_    = false;
 
+  const double max_radius {4.0};
+  double offset_angle_;
+  double offset_x;
+  double offset_y;
+  double searching_circle_angle {0.0};
+  double searching_circle_radius {5.0};
   /* ros parameters */
   bool _gui_ = false;
 
@@ -169,7 +175,9 @@ private:
   
   cv::Mat goal_pose;
   cv::Mat state;
-  
+
+  double searching_circle_center_x;
+  double searching_circle_center_y;
   // | --------------------- other functions -------------------- |
   void publishImageNumber(uint64_t count);
   std::vector<double> calculateFormation( cv::Mat state,cv::Mat state_neigh1,cv::Mat state_neigh2,cv::Mat goal);
@@ -213,6 +221,7 @@ void Optimiser::onInit() {
   param_loader.loadParam("world_point/x", world_point_x_);
   param_loader.loadParam("world_point/y", world_point_y_);
   param_loader.loadParam("world_point/z", world_point_z_);
+  param_loader.loadParam("offset_angle/"+_uav_name_, offset_angle_);
 
   if (!param_loader.loadedSuccessfully()) {
     ROS_ERROR("[WaypointFlier]: failed to load non-optional parameters!");
@@ -256,6 +265,12 @@ void Optimiser::onInit() {
   service_motion_ = nh.advertiseService(trigger_motion, &Optimiser::callback_trigger_motion,this);
   service_mode_   = nh.advertiseService(trigger_mode, &Optimiser::callback_trigger_mode,this);
   // ------------------------------------------------------------|
+  offset_x = max_radius*std::cos(offset_angle_);
+  offset_y = max_radius*std::sin(offset_angle_);
+
+  // ------------------------------------------------------------|
+  searching_circle_center_x = 0.0;
+  searching_circle_center_y = 0.0;
   ROS_INFO_ONCE("[Optimiser]: initialized");
 
   is_initialized_ = true;
@@ -278,6 +293,7 @@ void Optimiser::callbackROBOT(const nav_msgs::OdometryConstPtr& odom_own, const 
   
   ROS_INFO("Slept for %lf secs", dt);
 
+ 
   /* update the checks-related variables (in a thread-safe manner) */
   {
     std::scoped_lock lock(mutex_counters_);
@@ -285,6 +301,7 @@ void Optimiser::callbackROBOT(const nav_msgs::OdometryConstPtr& odom_own, const 
     msg_counter_++;
     time_last_image_ = ros::Time::now();
   }
+
 
   double own_x = (double)(odom_own->pose.pose.position.x);
   double own_y = (double)(odom_own->pose.pose.position.y);
@@ -298,40 +315,61 @@ void Optimiser::callbackROBOT(const nav_msgs::OdometryConstPtr& odom_own, const 
   double goal_x = (double)(goal_msg->pose.pose.position.x);
   double goal_y = (double)(goal_msg->pose.pose.position.y);
   double goal_z = (double)(goal_msg->pose.pose.position.z);
- 
+
+  if(msg_counter_<5)
+  { 
+    searching_circle_center_x = own_x+neigh1_x+neigh2_x;
+    searching_circle_center_y = own_y+neigh1_y+neigh2_y;
+  }
   cv::Mat state = (cv::Mat_<double>(2,1) << own_x,  own_y);
   cv::Mat state_neigh1 = (cv::Mat_<double>(2,1) << neigh1_x,  neigh1_y);
   cv::Mat state_neigh2 = (cv::Mat_<double>(2,1) << neigh2_x, neigh2_y);
-  cv::Mat goal = (cv::Mat_<double>(2,1) << goal_x,goal_y);
-  std::vector<double> go_to = Optimiser::calculateFormation(state,state_neigh1,state_neigh2,goal);
-  // MRS - waypoint --------------------------------------
-  ROS_INFO_STREAM("goto_x: "<<go_to[0]<<", y: "<<go_to[1]);
+  
+ 
+  std::vector<double> go_to {0,0};
+
+
+  if (select_mode_) 
+  {
+    cv::Mat goal = (cv::Mat_<double>(2,1) << goal_x,goal_y);
+    ROS_INFO("Mode: form formation");
+    if ((goal_x != -100000) || ((goal_y != -100000) || (goal_z != -100000))){
+      ROS_INFO_STREAM("goto_x: "<<go_to[0]<<", y: "<<go_to[1]);
+      go_to = Optimiser::calculateFormation(state,state_neigh1,state_neigh2,goal);
+    }
+    else
+    {
+      ROS_INFO("Cannot detect objects");
+      ROS_INFO("Please, select searching mode");
+      go_to[0] = own_x;
+      go_to[1] = own_y;
+    }
+  } 
+  else 
+  {
+    if (searching_circle_angle >= 2*M_PI)
+    {
+      searching_circle_angle -= 2*M_PI; 
+    }
+    searching_circle_angle += M_PI/32;
+    ROS_INFO_STREAM("searching x: "<<searching_circle_center_x<<","<<" y: "<<searching_circle_center_y);
+    double avg_x = searching_circle_center_x + searching_circle_radius*cos(searching_circle_angle);
+    double avg_y = searching_circle_center_y + searching_circle_radius*sin(searching_circle_angle);
+    cv::Mat goal = (cv::Mat_<double>(2,1) << avg_x + offset_x,avg_y + offset_y);
+    ROS_INFO("Mode: search");
+    go_to = Optimiser::calculateFormation(state,state_neigh1,state_neigh2,goal);
+  }
+
+    // MRS - waypoint --------------------------------------
   srv.request.header.stamp = ros::Time::now();
   srv.request.header.frame_id = _uav_name_ + "/" + "gps_origin";
   srv.request.reference.position.x = go_to[0];
   srv.request.reference.position.y = go_to[1];
-  srv.request.reference.position.z = goal_z;
+  srv.request.reference.position.z = 4.0;
   srv.request.reference.heading    = -0.1; 
 
-  if (select_mode_) 
-  {
-    ROS_INFO("Mode: form formation");
-  } 
-  else 
-  {
-    ROS_INFO("Mode: search");
-  }
-  
-  if (allow_motion_)
-  {
-    ROS_INFO("State: moving");
-  }
-  else
-  {
-    ROS_INFO("State: not moving");
-  }
-
   if (allow_motion_){
+      ROS_INFO("State: moving");
       if (client.call(srv))
       {
           ROS_INFO("Successfull calling service\n");
@@ -340,6 +378,10 @@ void Optimiser::callbackROBOT(const nav_msgs::OdometryConstPtr& odom_own, const 
       {
           ROS_ERROR("Could not publish\n");
       }
+  }
+  else
+  {
+      ROS_INFO("State: not moving");
   }
   //---------------------------------------------------------------
   ros::Duration(0.1).sleep();

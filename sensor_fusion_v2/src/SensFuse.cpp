@@ -24,7 +24,7 @@
 #include <stdio.h>
 #include <mutex>
 #include <eigen3/Eigen/Eigen>
-
+#include <algorithm>
 /* some OpenCV includes */
 #include <opencv2/opencv.hpp>
 #include <opencv2/core/core.hpp>
@@ -131,7 +131,7 @@ private:
 
   cv::Point3f center3D;
   cv::Mat goal_pose;
-  double max_radius;
+  double max_radius {3.0};
   
   double offset_x;
   double offset_y;
@@ -153,6 +153,9 @@ private:
   ros::Publisher             pub_goal_;
   int                        _rate_timer_publish_;
 
+  // ------------------------------------------------------------|
+  std::deque<cv::Point3f> centroids;
+  std::priority_queue<double> all_radius;
   // ------------------------------------------------------------|
   Vector3d init_input;
   Matrix6x6d Q;
@@ -286,7 +289,7 @@ void SensFuse::callbackROBOT(const mrs_msgs::PoseWithCovarianceArrayStampedConst
   //------------MEASUREMENTS------------------------    
 
   std::vector<double> all_x,all_y,all_z,all_cov;
-  std::priority_queue<double> all_radius;
+ 
   
   if (points_own->poses.size() > 0)
   {
@@ -315,6 +318,7 @@ void SensFuse::callbackROBOT(const mrs_msgs::PoseWithCovarianceArrayStampedConst
         all_z.push_back(point.pose.position.z);
     }
   }
+  //------------MEASUREMENTS------------------------    
   if (all_x.size() !=0 )
   {
       center3D.x = SensFuse::getAverage(all_x);
@@ -323,19 +327,30 @@ void SensFuse::callbackROBOT(const mrs_msgs::PoseWithCovarianceArrayStampedConst
 
       Vector3d measurement;
       measurement << center3D.x,center3D.y,center3D.z;
-  
+
       std::tie(new_x,new_cov) = SensFuse::lkfPredict(new_x,new_cov,dt);
       std::tie(new_x,new_cov) = SensFuse::lkfCorrect(new_x,new_cov,measurement,dt);
 
       center3D.x = new_x(0);
       center3D.y = new_x(1);
       center3D.z = new_x(2);
+
+      centroids.push_back(center3D);
+      if (centroids.size()>10)
+      {
+          centroids.pop_front();
+      }
       if (points_own->poses.size() > 0)
       {
         for (mrs_msgs::PoseWithCovarianceIdentified point : points_own->poses)
         {
             double value = std::sqrt(std::pow(point.pose.position.x-center3D.x,2) + std::pow(point.pose.position.y-center3D.y,2));
             all_radius.push(value);
+
+            if (all_radius.size()>100)
+            {
+                all_radius.pop();
+            }
         }
       }
       if (points_neigh1->poses.size() > 0)
@@ -344,6 +359,10 @@ void SensFuse::callbackROBOT(const mrs_msgs::PoseWithCovarianceArrayStampedConst
         {
             double value = std::sqrt(std::pow(point.pose.position.x-center3D.x,2) + std::pow(point.pose.position.y-center3D.y,2));
             all_radius.push(value);
+            if (all_radius.size()>100)
+            {
+                all_radius.pop();
+            }
         }
       }
       if (points_neigh2->poses.size() > 0)
@@ -352,33 +371,57 @@ void SensFuse::callbackROBOT(const mrs_msgs::PoseWithCovarianceArrayStampedConst
         {
             double value = std::sqrt(std::pow(point.pose.position.x-center3D.x,2) + std::pow(point.pose.position.y-center3D.y,2));
             all_radius.push(value);
+            if (all_radius.size()>100)
+            {
+                all_radius.pop();
+            }
         }
       }
-      // max_radius = all_radius.top();
-      max_radius = 2;
-      // if (max_radius<3.0){
-          // max_radius = 3.0;
-      // }else
-      // {
-          // max_radius = 0.5*all_radius.top();
-          // max_radius = 0.5*all_radius.top();
-      // }
-      ROS_INFO_STREAM("Centroid: "<<center3D.x<<", "<<center3D.y);
-      offset_x = max_radius*std::cos(offset_angle_);
-      offset_y = max_radius*std::sin(offset_angle_);
-      offset_z = 5.0;
-      
-      goal_pose = (cv::Mat_<float>(3,1) << center3D.x + offset_x,center3D.y + offset_y,center3D.z+offset_z);
+      max_radius = all_radius.top();
+      if (max_radius<3.0){
+          max_radius = 3.0;
+      }else
+      {
+          max_radius = 0.5*all_radius.top();
+          max_radius = 0.5*all_radius.top();
+      }
+  }
+  double total_x,total_y,total_z,avg_x,avg_y,avg_z;
+  if (centroids.size()>0)
+  { 
+    for(auto centroid = centroids.cbegin();centroid!=centroids.cend();centroid++)
+    {
+        total_x += centroid->x;   
+        total_y += centroid->y;   
+        total_z += centroid->z;   
+    }
+    avg_x = total_x/centroids.size();
+    avg_y = total_y/centroids.size();
+    avg_z = total_z/centroids.size();
+    // formation
+    offset_x = max_radius*std::cos(offset_angle_);
+    offset_y = max_radius*std::sin(offset_angle_);
+    offset_z = 5.0;
 
-      geometry_msgs::PoseWithCovarianceStamped out_msg;
-      out_msg.pose.pose.position.x = goal_pose.at<float>(0);
-      out_msg.pose.pose.position.y = goal_pose.at<float>(1);
-      out_msg.pose.pose.position.z = goal_pose.at<float>(2);
-      out_msg.header.frame_id = _uav_name_ + "/" + "gps_origin";
-      out_msg.header.stamp = ros::Time::now();
-      pub_goal_.publish(out_msg);
+    goal_pose = (cv::Mat_<float>(3,1) << avg_x + offset_x,avg_y + offset_y,avg_z+offset_z);
 
-      
+    geometry_msgs::PoseWithCovarianceStamped out_msg;
+    out_msg.pose.pose.position.x = goal_pose.at<float>(0);
+    out_msg.pose.pose.position.y = goal_pose.at<float>(1);
+    out_msg.pose.pose.position.z = goal_pose.at<float>(2);
+    out_msg.header.frame_id = _uav_name_ + "/" + "gps_origin";
+    out_msg.header.stamp = ros::Time::now();
+    pub_goal_.publish(out_msg);
+  }else
+  {
+    geometry_msgs::PoseWithCovarianceStamped out_msg;
+    out_msg.pose.pose.position.x = -100000;
+    out_msg.pose.pose.position.y = -100000;
+    out_msg.pose.pose.position.z = -100000;
+    out_msg.header.frame_id = _uav_name_ + "/" + "gps_origin";
+    out_msg.header.stamp = ros::Time::now();
+    pub_goal_.publish(out_msg);
+
   }
   
   ros::Duration(0.01).sleep();
