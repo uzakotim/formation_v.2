@@ -351,7 +351,7 @@ void Optimiser::callbackROBOT(const nav_msgs::OdometryConstPtr& odom_own, const 
     {
       searching_circle_angle -= 2*M_PI; 
     }
-    searching_circle_angle += M_PI/16;
+    searching_circle_angle += 0.5*dt;
     ROS_INFO_STREAM("Current angle: "<<searching_circle_angle);
     ROS_INFO_STREAM("searching x: "<<searching_circle_center_x<<","<<" y: "<<searching_circle_center_y);
     double avg_x = searching_circle_center_x + searching_circle_radius*cos(searching_circle_angle);
