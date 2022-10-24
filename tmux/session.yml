@@ -87,6 +87,10 @@ windows:
       layout: tiled
       panes:
         - waitForRos; roslaunch  mode_commander mode_commander.launch
+  - angle:
+      layout: tiled
+      panes:
+        - waitForRos; roslaunch angle_synchroniser angle_synchroniser.launch
   # - trigger:
   #     layout: tiled
   #     synchronize: after
