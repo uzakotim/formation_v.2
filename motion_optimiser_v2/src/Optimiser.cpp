@@ -91,6 +91,7 @@ private:
   double searching_circle_angle {0.0};
   double searching_circle_radius {5.0};
   /* ros parameters */
+  const double omega {10.0/180.0};
   bool _gui_ = false;
 
   std::string _uav_name_;
@@ -351,7 +352,7 @@ void Optimiser::callbackROBOT(const nav_msgs::OdometryConstPtr& odom_own, const 
     {
       searching_circle_angle -= 2*M_PI; 
     }
-    searching_circle_angle += 0.5*dt;
+    searching_circle_angle += omega*dt;
     ROS_INFO_STREAM("Current angle: "<<searching_circle_angle);
     ROS_INFO_STREAM("searching x: "<<searching_circle_center_x<<","<<" y: "<<searching_circle_center_y);
     double avg_x = searching_circle_center_x + searching_circle_radius*cos(searching_circle_angle);
