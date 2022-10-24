@@ -28,7 +28,7 @@ namespace mode_commander
         // Create a NodeHandle object
         ros::NodeHandle& private_nh = getPrivateNodeHandle();
         ROS_INFO("Initializing mode selector");
-        ROS_INFO_STREAM("Mode selector GUIDE: "<<'\n'<<"press 1 for moving/stopping uav1"<<'\n'<<"press 2 for moving/stopping uav2"<<'\n'<<"press 3 for moving/stopping uav3\n"<<"press s to switch mode: seraching/staying\n"<<"press q to exit\n");
+        ROS_INFO_STREAM("Mode selector GUIDE: "<<'\n'<<"press 1 for moving/stopping uav1"<<'\n'<<"press 2 for moving/stopping uav2"<<'\n'<<"press 3 for moving/stopping uav3\n"<<"press s to switch mode: searching/staying\n"<<"press q to exit\n");
         ros::ServiceClient client_uav1 = private_nh.serviceClient<std_srvs::Trigger>("/uav1/trigger_motion");
         ros::ServiceClient client_uav2 = private_nh.serviceClient<std_srvs::Trigger>("/uav2/trigger_motion");
         ros::ServiceClient client_uav3 = private_nh.serviceClient<std_srvs::Trigger>("/uav3/trigger_motion");
