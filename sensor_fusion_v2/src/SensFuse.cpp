@@ -386,18 +386,20 @@ void SensFuse::callbackROBOT(const mrs_msgs::PoseWithCovarianceArrayStampedConst
           max_radius = 0.5*all_radius.top();
       }
   }
-  double total_x,total_y,total_z,avg_x,avg_y,avg_z;
+  double total_x{0.0},total_y{0.0},total_z{0.0},avg_x{0.0},avg_y{0.0},avg_z{0.0};
   if (centroids.size()>0)
   { 
-    for(auto centroid = centroids.cbegin();centroid!=centroids.cend();centroid++)
+    for (unsigned i=0; i<centroids.size(); i++)
     {
-        total_x += centroid->x;   
-        total_y += centroid->y;   
-        total_z += centroid->z;   
+        total_x += centroids.at(i).x;   
+        total_y += centroids.at(i).y;  
+        total_z += centroids.at(i).z;
     }
-    avg_x = total_x/centroids.size();
-    avg_y = total_y/centroids.size();
-    avg_z = total_z/centroids.size();
+    avg_x = total_x/(double)centroids.size();
+    avg_y = total_y/(double)centroids.size();
+    avg_z = total_z/(double)centroids.size();
+    ROS_INFO_STREAM("[size centroid] :" << centroids.size());
+    ROS_INFO_STREAM("[current centroid] :" <<avg_x<<" | "<<avg_y<<" | "<<avg_z);
     // formation
     offset_x = max_radius*std::cos(offset_angle_);
     offset_y = max_radius*std::sin(offset_angle_);
