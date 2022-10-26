@@ -107,4 +107,4 @@ windows:
   - gz_rate:
       layout: tiled
       panes:
-        - waitForOdometry; sleep 5; gz physics -u 250 #125
+        - waitForOdometry; sleep 5; gz physics -u 125 #125

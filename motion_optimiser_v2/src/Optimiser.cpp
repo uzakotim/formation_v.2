@@ -83,6 +83,7 @@ private:
   std::atomic<bool> is_initialized_ = false;
   std::atomic<bool> allow_motion_   = false;
   std::atomic<bool> select_mode_    = false;
+  std::atomic<bool> record_centroid_= false;
 
   const double max_radius {5.0};
   double offset_angle_;
@@ -152,6 +153,7 @@ private:
   // ------------------------------------------------------------|
   ros::ServiceServer service_motion_;
   ros::ServiceServer service_mode_;
+  ros::ServiceServer service_rec_;
   // ----------Formation controller parameters--------------
   const double n_pos {1.2};
   const double n_neg {0.5};
@@ -188,6 +190,7 @@ private:
   double grad_y(double x,double y,double x_prev,double y_prev,double obs_x,double obs_y, double obs_2_x,double obs_2_y,double goal_x,double goal_y);
   bool callback_trigger_motion(std_srvs::Trigger::Request  &req, std_srvs::Trigger::Response &res);
   bool callback_trigger_mode(std_srvs::Trigger::Request  &req, std_srvs::Trigger::Response &res);
+  bool callback_trigger_rec(std_srvs::Trigger::Request  &req, std_srvs::Trigger::Response &res);
   
 };
 
@@ -263,8 +266,10 @@ void Optimiser::onInit() {
   // | -----------------------trigger    ------------------------ |
   std::string trigger_motion = "/" +_uav_name_ +"/trigger_motion";
   std::string trigger_mode = "/" +_uav_name_ +"/trigger_mode";
+  std::string trigger_rec = "/" +_uav_name_ +"/record_centroid";
   service_motion_ = nh.advertiseService(trigger_motion, &Optimiser::callback_trigger_motion,this);
   service_mode_   = nh.advertiseService(trigger_mode, &Optimiser::callback_trigger_mode,this);
+  service_rec_   = nh.advertiseService(trigger_rec, &Optimiser::callback_trigger_rec,this);
   // ------------------------------------------------------------|
   offset_x = max_radius*std::cos(offset_angle_);
   offset_y = max_radius*std::sin(offset_angle_);
@@ -317,10 +322,15 @@ void Optimiser::callbackROBOT(const nav_msgs::OdometryConstPtr& odom_own, const 
   double goal_y = (double)(goal_msg->pose.pose.position.y);
   double goal_z = (double)(goal_msg->pose.pose.position.z);
 
-  if(msg_counter_<2)
+  if(record_centroid_)
   { 
+    ROS_INFO("Recording centroid: on");
     searching_circle_center_x = (own_x+neigh1_x+neigh2_x)/3.0;
     searching_circle_center_y = (own_y+neigh1_y+neigh2_y)/3.0;
+  }
+  else
+  {
+    ROS_INFO("Recording centroid: off");
   }
   cv::Mat state = (cv::Mat_<double>(2,1) << own_x,  own_y);
   cv::Mat state_neigh1 = (cv::Mat_<double>(2,1) << neigh1_x,  neigh1_y);
@@ -427,6 +437,15 @@ bool Optimiser::callback_trigger_mode(std_srvs::Trigger::Request  &req, std_srvs
     select_mode_ = !select_mode_;
     return true;
 }
+bool Optimiser::callback_trigger_rec(std_srvs::Trigger::Request  &req, std_srvs::Trigger::Response &res)
+{
+    if (!is_initialized_) {
+      return false;
+    }
+    record_centroid_ = !record_centroid_;
+    return true;
+}
+
 
 /*| --------- Optimiser Function --------------------------------|*/
 
@@ -492,14 +511,14 @@ double Optimiser::sign(double input)
 
 double Optimiser::Cost(double x,double y,double x_prev,double y_prev,double obs_x,double obs_y, double obs_2_x,double obs_2_y,double goal_x,double goal_y)
 {
-  const double width = 7;
+  const double width = 25;
   const double height = 5;
   const double goal_depth = 5;
   return 0.5*std::pow((x-x_prev),2) + 0.5*std::pow((y-y_prev),2) + 0.5*std::pow((y-goal_y),2) + 0.5*std::pow((x-goal_x),2) + height + height*std::exp(-(std::pow((y-obs_y),2)/width))*std::exp(-(std::pow((x-obs_x),2))/width)+ height*std::exp(-std::pow((y-obs_2_y),2)/width)*exp(-std::pow((x-obs_2_x),2)/width) - goal_depth*std::exp(-std::pow((x-goal_x),2)/width)*std::exp(-(std::pow((y-goal_y),2)/width));
 }
 double Optimiser::grad_x(double x,double y,double x_prev,double y_prev,double obs_x,double obs_y, double obs_2_x,double obs_2_y,double goal_x,double goal_y)
 {
-  const double width = 7;
+  const double width = 25;
   const double height = 5;
   const double goal_depth = 5;
   return 1.0*(x-x_prev) + 1.0*(x-goal_x) + height*std::exp(-(std::pow((y-obs_y),2))/width)*std::exp(-(std::pow((x-obs_x),2))/width)*(-(2*(x-obs_x)/width)) + height*std::exp(-(std::pow((y-obs_2_y),2))/width)*std::exp(-(std::pow((x-obs_2_x),2))/width)*(-(2*(x-obs_2_x)/width)) - goal_depth*std::exp(-(std::pow((x-goal_x),2))/width)*std::exp(-(std::pow((y-goal_y),2)/width))*(-(2*(x-goal_x)/width));
@@ -507,7 +526,7 @@ double Optimiser::grad_x(double x,double y,double x_prev,double y_prev,double ob
 }
 double Optimiser::grad_y(double x,double y,double x_prev,double y_prev,double obs_x,double obs_y, double obs_2_x,double obs_2_y,double goal_x,double goal_y)
 {
-  const double width = 7;
+  const double width = 25;
   const double height = 5;
   const double goal_depth = 5;
   return 1.0*(y-y_prev) + 1.0*(y-goal_y) + height*std::exp(-(std::pow((y-obs_y),2))/width)*std::exp(-(std::pow((x-obs_x),2))/width)*(-(2*(y-obs_y)/width)) + height*std::exp(-(std::pow((y-obs_2_y),2))/width)*std::exp(-(std::pow((x-obs_2_x),2))/width)*(-(2*(y-obs_2_y)/width)) - goal_depth*std::exp(-(std::pow((x-goal_x),2))/width)*std::exp(-(std::pow((y-goal_y),2)/width))*(-(2*(y-goal_y)/width));
