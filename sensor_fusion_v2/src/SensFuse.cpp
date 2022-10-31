@@ -383,7 +383,6 @@ void SensFuse::callbackROBOT(const mrs_msgs::PoseWithCovarianceArrayStampedConst
       }else
       {
           max_radius = 0.5*all_radius.top();
-          max_radius = 0.5*all_radius.top();
       }
   }
   double total_x{0.0},total_y{0.0},total_z{0.0},avg_x{0.0},avg_y{0.0},avg_z{0.0};
