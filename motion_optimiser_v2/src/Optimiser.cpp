@@ -511,14 +511,14 @@ double Optimiser::sign(double input)
 
 double Optimiser::Cost(double x,double y,double x_prev,double y_prev,double obs_x,double obs_y, double obs_2_x,double obs_2_y,double goal_x,double goal_y)
 {
-  const double width = 100; //25 50
+  const double width = 50; //25 50
   const double height = 5;
   const double goal_depth = 5;
   return 0.5*std::pow((x-x_prev),2) + 0.5*std::pow((y-y_prev),2) + 0.5*std::pow((y-goal_y),2) + 0.5*std::pow((x-goal_x),2) + height + height*std::exp(-(std::pow((y-obs_y),2)/width))*std::exp(-(std::pow((x-obs_x),2))/width)+ height*std::exp(-std::pow((y-obs_2_y),2)/width)*exp(-std::pow((x-obs_2_x),2)/width) - goal_depth*std::exp(-std::pow((x-goal_x),2)/width)*std::exp(-(std::pow((y-goal_y),2)/width));
 }
 double Optimiser::grad_x(double x,double y,double x_prev,double y_prev,double obs_x,double obs_y, double obs_2_x,double obs_2_y,double goal_x,double goal_y)
 {
-  const double width = 100;
+  const double width = 50;
   const double height = 5;
   const double goal_depth = 5;
   return 1.0*(x-x_prev) + 1.0*(x-goal_x) + height*std::exp(-(std::pow((y-obs_y),2))/width)*std::exp(-(std::pow((x-obs_x),2))/width)*(-(2*(x-obs_x)/width)) + height*std::exp(-(std::pow((y-obs_2_y),2))/width)*std::exp(-(std::pow((x-obs_2_x),2))/width)*(-(2*(x-obs_2_x)/width)) - goal_depth*std::exp(-(std::pow((x-goal_x),2))/width)*std::exp(-(std::pow((y-goal_y),2)/width))*(-(2*(x-goal_x)/width));
@@ -526,7 +526,7 @@ double Optimiser::grad_x(double x,double y,double x_prev,double y_prev,double ob
 }
 double Optimiser::grad_y(double x,double y,double x_prev,double y_prev,double obs_x,double obs_y, double obs_2_x,double obs_2_y,double goal_x,double goal_y)
 {
-  const double width = 100;
+  const double width = 50;
   const double height = 5;
   const double goal_depth = 5;
   return 1.0*(y-y_prev) + 1.0*(y-goal_y) + height*std::exp(-(std::pow((y-obs_y),2))/width)*std::exp(-(std::pow((x-obs_x),2))/width)*(-(2*(y-obs_y)/width)) + height*std::exp(-(std::pow((y-obs_2_y),2))/width)*std::exp(-(std::pow((x-obs_2_x),2))/width)*(-(2*(y-obs_2_y)/width)) - goal_depth*std::exp(-(std::pow((x-goal_x),2))/width)*std::exp(-(std::pow((y-goal_y),2)/width))*(-(2*(y-goal_y)/width));
