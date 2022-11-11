@@ -247,8 +247,6 @@ void BlobDet::onInit() {
   if (_gui_) {
 
     int flags = cv::WINDOW_NORMAL | cv::WINDOW_FREERATIO | cv::WINDOW_GUI_EXPANDED;
-    // cv::namedWindow("original", flags);
-    // cv::namedWindow("edges", flags);
     cv::namedWindow("detected_objects", flags);
 
     /* Create a Trackbar for user to enter threshold */
@@ -262,15 +260,8 @@ void BlobDet::onInit() {
   // | -------------- initialize tranform listener -------------- |
   // the transform listener will fill the TF buffer with latest transforms
   tf_listener_ptr_ = std::make_unique<tf2_ros::TransformListener>(tf_buffer_);
-
-  
   ROS_INFO_STREAM("tf_listener ok");
-  // | --------------------- topics -------------------- |
-  // std::string image_in = _uav_name_ + "/rgbd_down/color/image_raw";
-  // std::string camera_info_in = _uav_name_ + "/rgbd_down/color/camera_info";
   // | ----------------- initialize subscribers ----------------- |
-  // sub_image_       = it.subscribe("image_in", 1, &BlobDet::callbackImage, this);
-  // sub_depth_       = it.subscribe("depth_in", 1, &BlobDet::callbackImage, this);
   sub_camera_info_ = nh.subscribe("camera_info_in", 1, &BlobDet::callbackCameraInfo, this, ros::TransportHints().tcpNoDelay());
   sub_image_.subscribe(nh, "image_in", 100);
   sub_depth_.subscribe(nh, "depth_in", 100);
@@ -348,8 +339,8 @@ void BlobDet::GrabRGBD(const sensor_msgs::ImageConstPtr& msgRGB,const sensor_msg
   // if it differs from the one in the message. Try to be consistent in what encodings you use throughout the code.
   
   const std_msgs::Header           msg_header       = msgRGB->header;
-  const cv_bridge::CvImageConstPtr cv_ptrRGB = cv_bridge::toCvShare(msgRGB);
-  const cv_bridge::CvImageConstPtr cv_ptrD = cv_bridge::toCvShare(msgD);
+  const cv_bridge::CvImageConstPtr cv_ptrRGB        = cv_bridge::toCvShare(msgRGB);
+  const cv_bridge::CvImageConstPtr cv_ptrD          = cv_bridge::toCvShare(msgD);
 
 
  
@@ -383,6 +374,8 @@ void BlobDet::GrabRGBD(const sensor_msgs::ImageConstPtr& msgRGB,const sensor_msg
   cv::Mat drawing = cv::Mat::zeros(cv_image.size(), CV_8UC3 );
   std::vector<mrs_msgs::PoseWithCovarianceIdentified> points_array {};
   if (image_counter_>10){
+    
+    // Red Mask
     if (contours_red.size()>0)
     {
       for (size_t i = 0;i<contours_red.size();i++)
@@ -418,6 +411,7 @@ void BlobDet::GrabRGBD(const sensor_msgs::ImageConstPtr& msgRGB,const sensor_msg
               }
       }
     }
+    // Blue Mask
 
     if (contours_blue.size()>0)
     {
@@ -453,42 +447,8 @@ void BlobDet::GrabRGBD(const sensor_msgs::ImageConstPtr& msgRGB,const sensor_msg
                   cv::circle  (drawing, statePt2D, int(radius), detection_color_blue, 2 );
               }
       }
-    }
-    // if (contours_orange.size()>0)
-    // {
-    //   for (size_t s = 0;s<contours_orange.size();s++)
-    //   {
-    //                 double newArea = cv::contourArea(contours_orange.at(s));
-    //                 if(newArea > blob_size)
-    //                 {   
-    //                     // Finding blob's center       
-    //                     cv::Point2f center = BlobDet::FindCenter(contours_orange, s);
-    //                     unsigned short val = depth_image.at<unsigned short>(center.y, center.x);
-    //                     center3D.x = center.x;
-    //                     center3D.y = center.y;
-    //                     center3D.z = (float)val/1000.0;
-
-    //                     // | ----------- Project a world point to the image ----------- |
-            
-    //                     const geometry_msgs::PoseStamped global = BlobDet::projectWorldPointToGlobal(cv_image, msg_header.stamp, center3D.x, center3D.y, center3D.z);
-    //                     // | --------- Timur Uzakov Modification -------- |
-    //                     ROS_INFO_STREAM("x: "<<global.pose.position.x<<"y: "<<global.pose.position.y<<"z: "<<global.pose.position.z);
-                        
-    //                     mrs_msgs::PoseWithCovarianceIdentified detected_point;
-    //                     detected_point.pose.position.x = global.pose.position.x;
-    //                     detected_point.pose.position.y = global.pose.position.y;
-    //                     detected_point.pose.position.z = global.pose.position.z;
-    //                     points_array.push_back(detected_point);
-                        
-    //                     // Drawing 
-    //                     statePt2D.x = center.x;
-    //                     statePt2D.y = center.y;
-    //                     cv::circle  (drawing, statePt2D, 5, detection_color_orange, 10);
-    //                     float radius = BlobDet::FindRadius(contours_orange, s);
-    //                     cv::circle  (drawing, statePt2D, int(radius), detection_color_orange, 2 );
-    //                 }
-    //   }
-    // }
+    } 
+    // Purple mask
     if (contours_purple.size()>0)
     {
       for (size_t n = 0;n<contours_purple.size();n++)
@@ -554,13 +514,10 @@ void BlobDet::GrabRGBD(const sensor_msgs::ImageConstPtr& msgRGB,const sensor_msg
   }
 }
 
-//}
-
-//}
 
 // | --------------------- timer callbacks -------------------- |
 
-/* callbackTimerCheckSubscribers() method //{ */
+/* callbackTimerCheckSubscribers() method */
 
 void BlobDet::callbackTimerCheckSubscribers([[maybe_unused]] const ros::TimerEvent& te) {
 
@@ -575,8 +532,6 @@ void BlobDet::callbackTimerCheckSubscribers([[maybe_unused]] const ros::TimerEve
     ROS_WARN_THROTTLE(1.0, "Not received camera info msg since node launch.");
   }
 }
-
-//}
 
 // | -------------------- other functions ------------------- |
 

@@ -68,18 +68,12 @@ namespace sensor_fusion_v2
 
 using namespace Eigen;
 /* class SensFuse //{ */
-typedef Eigen::Matrix<double, 9, 9> Matrix9x9d;
 typedef Eigen::Matrix<double, 6, 6> Matrix6x6d;
 typedef Eigen::Matrix<double, 6, 3> Matrix6x3d;
-typedef Eigen::Matrix<double, 6, 9> Matrix6x9d;
-typedef Eigen::Matrix<double, 9, 3> Matrix9x3d;
-typedef Eigen::Matrix<double, 9, 6> Matrix9x6d;
 typedef Eigen::Matrix<double, 3, 6> Matrix3x6d;
-typedef Eigen::Matrix<double, 3, 9> Matrix3x9d;
 typedef Eigen::Matrix<double, 3, 3> Matrix3x3d;
 typedef Eigen::Matrix<double, 6, 1> Vector6d;
 typedef Eigen::Matrix<double, 3, 1> Vector3d;
-typedef Eigen::Matrix<double, 9, 1> Vector9d;
 
 class SensFuse : public nodelet::Nodelet {
 
@@ -261,7 +255,6 @@ void SensFuse::onInit() {
   is_initialized_ = true;
 }
 
-//}
 
 // | ---------------------- msg callbacks --------------------- |
 
