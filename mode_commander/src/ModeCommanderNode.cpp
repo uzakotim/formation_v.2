@@ -3,7 +3,9 @@
 // Include your header
 #include <mode_commander/ModeCommanderNode.hpp>
  
-
+/* custom helper functions from our library */
+#include <mrs_lib/param_loader.h>
+#include <mrs_lib/transformer.h>
 #include <std_srvs/Trigger.h>
 
 
@@ -28,18 +30,33 @@ namespace mode_commander
         // Create a NodeHandle object
         ros::NodeHandle& private_nh = getPrivateNodeHandle();
         ROS_INFO("Initializing mode selector");
+        
+
+        mrs_lib::ParamLoader param_loader(private_nh, "ModeCommanderNode");
+        std::string _uav_name_1 = "";
+        std::string _uav_name_2 = "";
+        std::string _uav_name_3 = "";
+        param_loader.loadParam("UAV_NAME_1", _uav_name_1);
+        param_loader.loadParam("UAV_NAME_2", _uav_name_2);
+        param_loader.loadParam("UAV_NAME_3", _uav_name_3);
+
+        if (!param_loader.loadedSuccessfully()) {
+            ROS_ERROR("[WaypointFlier]: failed to load non-optional parameters!");
+            ros::shutdown();
+        }
+        
         ROS_INFO_STREAM("Mode selector GUIDE: \n"<<"press r for recording/not_recording centroid between drones\n"<<"press 1 for moving/stopping uav1"<<'\n'<<"press 2 for moving/stopping uav2"<<'\n'<<"press 3 for moving/stopping uav3\n"<<"press s to switch mode: searching/staying\n"<<"press q to exit\n");
-        ros::ServiceClient client_uav1 = private_nh.serviceClient<std_srvs::Trigger>("/uav1/trigger_motion");
-        ros::ServiceClient client_uav2 = private_nh.serviceClient<std_srvs::Trigger>("/uav2/trigger_motion");
-        ros::ServiceClient client_uav3 = private_nh.serviceClient<std_srvs::Trigger>("/uav3/trigger_motion");
+        ros::ServiceClient client_uav1 = private_nh.serviceClient<std_srvs::Trigger>("/"+_uav_name_1 +"/trigger_motion");
+        ros::ServiceClient client_uav2 = private_nh.serviceClient<std_srvs::Trigger>("/"+_uav_name_2 +"/trigger_motion");
+        ros::ServiceClient client_uav3 = private_nh.serviceClient<std_srvs::Trigger>("/"+_uav_name_3 +"/trigger_motion");
 
-        ros::ServiceClient client_mode_uav1 = private_nh.serviceClient<std_srvs::Trigger>("/uav1/trigger_mode");
-        ros::ServiceClient client_mode_uav2 = private_nh.serviceClient<std_srvs::Trigger>("/uav2/trigger_mode");
-        ros::ServiceClient client_mode_uav3 = private_nh.serviceClient<std_srvs::Trigger>("/uav3/trigger_mode");
+        ros::ServiceClient client_mode_uav1 = private_nh.serviceClient<std_srvs::Trigger>("/"+_uav_name_1+"/trigger_mode");
+        ros::ServiceClient client_mode_uav2 = private_nh.serviceClient<std_srvs::Trigger>("/"+_uav_name_2+"/trigger_mode");
+        ros::ServiceClient client_mode_uav3 = private_nh.serviceClient<std_srvs::Trigger>("/"+_uav_name_3+"/trigger_mode");
 
-        ros::ServiceClient client_rec_uav1 = private_nh.serviceClient<std_srvs::Trigger>("/uav1/record_centroid");
-        ros::ServiceClient client_rec_uav2 = private_nh.serviceClient<std_srvs::Trigger>("/uav2/record_centroid");
-        ros::ServiceClient client_rec_uav3 = private_nh.serviceClient<std_srvs::Trigger>("/uav3/record_centroid");
+        ros::ServiceClient client_rec_uav1 = private_nh.serviceClient<std_srvs::Trigger>("/"+_uav_name_1+"/record_centroid");
+        ros::ServiceClient client_rec_uav2 = private_nh.serviceClient<std_srvs::Trigger>("/"+_uav_name_2+"/record_centroid");
+        ros::ServiceClient client_rec_uav3 = private_nh.serviceClient<std_srvs::Trigger>("/"+_uav_name_3+"/record_centroid");
 
         std_srvs::Trigger srv1;
         std_srvs::Trigger srv2;

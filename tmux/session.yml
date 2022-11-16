@@ -21,7 +21,7 @@ windows:
   - spawn:
       layout: tiled
       panes:
-  # drone spawned needs exact uav numbers
+  # !!!!!!!-----------------------------drone spawner needs exact uav numbers
         - waitForSimulation; rosservice call /mrs_drone_spawner/spawn "2 $UAV_TYPE_LEADER --enable-rangefinder --enable-realsense-down --enable-realsense-front --pos 0 0 2 0.0"
         - waitForSimulation; rosservice call /mrs_drone_spawner/spawn "3 $UAV_TYPE_LEADER --enable-rangefinder --enable-realsense-down --enable-realsense-front --pos 4 0 2 0.0"
         - waitForSimulation; rosservice call /mrs_drone_spawner/spawn "4 $UAV_TYPE_LEADER --enable-rangefinder --enable-realsense-down --enable-realsense-front --pos 0 4 2 0.0"
@@ -87,7 +87,7 @@ windows:
   - mode:
       layout: tiled
       panes:
-        - waitForRos; roslaunch  mode_commander mode_commander.launch
+        - export UAV_NAME_1="$UAV_NAME_1"; export UAV_NAME_2="$UAV_NAME_2"; export UAV_NAME_3="$UAV_NAME_3"; waitForRos; roslaunch  mode_commander mode_commander.launch
   - gz_rate:
       layout: tiled
       panes:
