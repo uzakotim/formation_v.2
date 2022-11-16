@@ -61,11 +61,11 @@ input=(
 '
   'roscore' 'roscore
 '
-  'perception' 'export UAV_NAME="uav${UAV_NUMBERS[0]}"; waitForRos; roslaunch --wait blob_det_v2 blob_det_v2_real.launch 
+  'perception' 'export UAV_NAME="uav${UAV_NUMBERS[2]}"; waitForRos; roslaunch --wait blob_det_v2 blob_det_v2_real.launch 
 '
-  'sensor_fusion' 'export UAV_NAME="uav${UAV_NUMBERS[0]}"; export NEIGH_NAME_1="uav${UAV_NUMBERS[1]}"; NEIGH_NAME_2="uav${UAV_NUMBERS[2]}";waitForRos; roslaunch --wait sensor_fusion_v2 sensor_fusion_v2.launch 
+  'sensor_fusion' 'export UAV_NAME="uav${UAV_NUMBERS[2]}"; export NEIGH_NAME_1="uav${UAV_NUMBERS[0]}"; NEIGH_NAME_2="uav${UAV_NUMBERS[1]}";waitForRos; roslaunch --wait sensor_fusion_v2 sensor_fusion_v2.launch 
 '
-  'motion_optimisation' 'export UAV_NAME="uav${UAV_NUMBERS[0]}"; export NEIGH_NAME_1="uav${UAV_NUMBERS[1]}"; NEIGH_NAME_2="uav${UAV_NUMBERS[2]}";waitForRos; roslaunch --wait motion_optimiser_v2 motion_optimiser_v2.launch 
+  'motion_optimisation' 'export UAV_NAME="uav${UAV_NUMBERS[2]}"; export NEIGH_NAME_1="uav${UAV_NUMBERS[0]}"; NEIGH_NAME_2="uav${UAV_NUMBERS[1]}";waitForRos; roslaunch --wait motion_optimiser_v2 motion_optimiser_v2.launch 
 '
 )
 

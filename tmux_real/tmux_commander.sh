@@ -27,7 +27,7 @@ SESSION_NAME=mav
 
 # following commands will be executed first in each window
 # * do NOT put ; at the end
-pre_input="mkdir -p $MAIN_DIR/$PROJECT_NAME; export WORLD_FILE=./world.yaml"
+pre_input="mkdir -p $MAIN_DIR/$PROJECT_NAME; export WORLD_FILE=./world.yaml; nums=$(python3 parser.py | tr '\n' " "); echo \"UAV_NUMBERS=($nums)\" > /tmp/random_uav_numbers;"
 
 # define commands
 # 'name' 'command'
@@ -61,7 +61,7 @@ input=(
 # '
   'roscore' 'roscore
 '
-  'commander' 'waitForRos; roslaunch  mode_commander mode_commander.launch
+  'commander' 'export UAV_NAME_1="uav${UAV_NUMBERS[0]}"; export UAV_NAME_2="uav${UAV_NUMBERS[1]}"; export UAV_NAME_3="uav${UAV_NUMBERS[2]}"; waitForRos; roslaunch  mode_commander mode_commander.launch
 '
 )
 
