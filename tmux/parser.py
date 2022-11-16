@@ -1,3 +1,3 @@
-print("uav1")
-print("uav2")
-print("uav3")
+print("5")
+print("10")
+print("15")
