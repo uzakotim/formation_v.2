@@ -225,7 +225,8 @@ void Optimiser::onInit() {
   param_loader.loadParam("world_point/x", world_point_x_);
   param_loader.loadParam("world_point/y", world_point_y_);
   param_loader.loadParam("world_point/z", world_point_z_);
-  param_loader.loadParam("offset_angle/"+_uav_name_, offset_angle_);
+  // param_loader.loadParam("offset_angle/"+_uav_name_, offset_angle_);
+  param_loader.loadParam("OFFSET_ANGLE", offset_angle_);
 
   if (!param_loader.loadedSuccessfully()) {
     ROS_ERROR("[WaypointFlier]: failed to load non-optional parameters!");
