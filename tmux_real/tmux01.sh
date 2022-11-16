@@ -61,7 +61,7 @@ input=(
 '
   'roscore' 'roscore
 '
-  'perception' 'export UAV_NAME="uav1"; waitForRos; roslaunch --wait blob_det_v2 blob_det_v2.launch 
+  'perception' 'export UAV_NAME="uav1"; waitForRos; roslaunch --wait blob_det_v2 blob_det_v2_real.launch 
 '
   'sensor_fusion' 'export UAV_NAME="uav1"; export NEIGH_NAME_1="uav2"; NEIGH_NAME_2="uav3";waitForRos; roslaunch --wait sensor_fusion_v2 sensor_fusion_v2.launch 
 '
