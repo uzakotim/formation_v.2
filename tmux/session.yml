@@ -41,21 +41,21 @@ windows:
       layout: tiled
       panes:
         # { "uav${UAV_NUMBERS[1]}"
-        - 'export UAV_NAME="UAV_NAME_1";
+        - 'export UAV_NAME="$UAV_NAME_1";
           waitForControl;
           rosservice call /$UAV_NAME/mavros/cmd/arming 1;
           sleep 2;
           rosservice call /$UAV_NAME/mavros/set_mode 0 offboard'
         #}
         # { "uav${UAV_NUMBERS[2]}"
-        - 'export UAV_NAME="UAV_NAME_2";
+        - 'export UAV_NAME="$UAV_NAME_2";
           waitForControl;
           rosservice call /$UAV_NAME/mavros/cmd/arming 1;
           sleep 2;
           rosservice call /$UAV_NAME/mavros/set_mode 0 offboard'
         # }
         # { "uav${UAV_NUMBERS[3]}"
-        - 'export UAV_NAME="UAV_NAME_3";
+        - 'export UAV_NAME="$UAV_NAME_3";
           waitForControl;
           rosservice call /$UAV_NAME/mavros/cmd/arming 1;
           sleep 2;
