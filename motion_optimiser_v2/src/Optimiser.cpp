@@ -181,6 +181,7 @@ private:
 
   double searching_circle_center_x;
   double searching_circle_center_y;
+  double z_height {4.0}; // set height of formation
   // | --------------------- other functions -------------------- |
   void publishImageNumber(uint64_t count);
   std::vector<double> calculateFormation( cv::Mat state,cv::Mat state_neigh1,cv::Mat state_neigh2,cv::Mat goal);
@@ -379,8 +380,8 @@ void Optimiser::callbackROBOT(const nav_msgs::OdometryConstPtr& odom_own, const 
   srv.request.header.frame_id = _uav_name_ + "/" + "gps_origin";
   srv.request.reference.position.x = go_to[0];
   srv.request.reference.position.y = go_to[1];
-  srv.request.reference.position.z = 4.0;
-  srv.request.reference.heading    = -0.1; 
+  srv.request.reference.position.z = z_height;
+  // srv.request.reference.heading    = -0.1; 
 
   if (allow_motion_){
       ROS_INFO("State: moving");

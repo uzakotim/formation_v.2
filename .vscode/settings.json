@@ -66,5 +66,6 @@
     "python.analysis.extraPaths": [
         "/home/timur/mrs_workspace/devel/lib/python3/dist-packages",
         "/opt/ros/noetic/lib/python3/dist-packages"
-    ]
+    ],
+    "cmake.sourceDirectory": "${workspaceFolder}/blob_det_v2"
 }
