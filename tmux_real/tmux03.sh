@@ -49,8 +49,8 @@ input=(
 '
   'Control' 'waitForRos; roslaunch mrs_uav_general core.launch config_constraint_manager:=./custom_configs/constraint_manager.yaml config_control_manager:=./custom_configs/control_manager.yaml config_mpc_tracker:=./custom_configs/mpc_tracker.yaml config_odometry:=./custom_configs/odometry.yaml config_uav_manager:=./custom_configs/uav_manager.yaml config_uav_names:=./custom_configs/uav_names.yaml config_landoff_tracker:=./custom_configs/landoff_tracker.yaml
 '
-  'AutoStart' 'waitForRos; roslaunch mrs_uav_general automatic_start.launch custom_config:=./custom_configs/automatic_start.yaml
-'
+#  'AutoStart' 'waitForRos; roslaunch mrs_uav_general automatic_start.launch custom_config:=./custom_configs/automatic_start.yaml
+#'
   'slow_odom' 'waitForRos; rostopic echo /'"$UAV_NAME"'/odometry/slow_odom
 '
   'odom_diag' 'waitForRos; rostopic echo /'"$UAV_NAME"'/odometry/diagnostics
@@ -61,12 +61,12 @@ input=(
 '
   'roscore' 'roscore
 '
-  'perception' 'export UAV_NAME="uav${UAV_NUMBERS[2]}"; waitForRos; roslaunch --wait blob_det_v2 blob_det_v2_real.launch 
-'
-  'sensor_fusion' 'export UAV_NAME="uav${UAV_NUMBERS[2]}"; export NEIGH_NAME_1="uav${UAV_NUMBERS[0]}"; NEIGH_NAME_2="uav${UAV_NUMBERS[1]}";waitForRos; roslaunch --wait sensor_fusion_v2 sensor_fusion_v2.launch 
-'
-  'motion_optimisation' 'export UAV_NAME="uav${UAV_NUMBERS[2]}"; export NEIGH_NAME_1="uav${UAV_NUMBERS[0]}"; NEIGH_NAME_2="uav${UAV_NUMBERS[1]}";waitForRos; roslaunch --wait motion_optimiser_v2 motion_optimiser_v2.launch 
-'
+  'perception' 'export UAV_NAME="uav${UAV_NUMBERS[2]}"; waitForRos; roslaunch --wait blob_det_v2 blob_det_v2_real.launch
+' 
+  'sensor_fusion' 'export UAV_NAME="uav${UAV_NUMBERS[2]}"; export NEIGH_NAME_1="uav${UAV_NUMBERS[0]}";export NEIGH_NAME_2="uav${UAV_NUMBERS[1]}"; export OFFSET_ANGLE=-2.0944 ;waitForRos; roslaunch --wait sensor_fusion_v2 sensor_fusion_v2.launch 
+' 
+  'motion_optimisation' 'export UAV_NAME="uav${UAV_NUMBERS[2]}"; export NEIGH_NAME_1="uav${UAV_NUMBERS[0]}";export NEIGH_NAME_2="uav${UAV_NUMBERS[1]}"; export OFFSET_ANGLE=-2.0944 ;waitForRos; roslaunch --wait motion_optimiser_v2 motion_optimiser_v2.launch 
+' 
 )
 
 # the name of the window to focus after start
