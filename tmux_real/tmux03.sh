@@ -27,7 +27,7 @@ SESSION_NAME=mav
 
 # following commands will be executed first in each window
 # * do NOT put ; at the end
-pre_input="mkdir -p $MAIN_DIR/$PROJECT_NAME; export WORLD_FILE=./world.yaml; export nums=$(python3 parser.py | tr '\n' " ");export UAV_NUMBERS=($nums)"
+pre_input="mkdir -p $MAIN_DIR/$PROJECT_NAME; export WORLD_FILE=./world.yaml; export NUMBER1=$(python3 parser1.py);export NUMBER2=$(python3 parser2.py);export NUMBER3=$(python3 parser3.py)"
 
 # define commands
 # 'name' 'command'
@@ -61,11 +61,11 @@ input=(
 '
   'roscore' 'roscore
 '
-  'perception' 'export UAV_NAME="uav${UAV_NUMBERS[2]}"; waitForRos; roslaunch --wait blob_det_v2 blob_det_v2_real.launch
+  'perception' 'export UAV_NAME="uav$NUMBER3"; waitForRos; roslaunch --wait blob_det_v2 blob_det_v2_real.launch
 ' 
-  'sensor_fusion' 'export UAV_NAME="uav${UAV_NUMBERS[2]}"; export NEIGH_NAME_1="uav${UAV_NUMBERS[0]}";export NEIGH_NAME_2="uav${UAV_NUMBERS[1]}"; export OFFSET_ANGLE=-2.0944 ;waitForRos; roslaunch --wait sensor_fusion_v2 sensor_fusion_v2.launch 
+  'sensor_fusion' 'export UAV_NAME="uav$NUMBER3"; export NEIGH_NAME_1="uav$NUMBER1";export NEIGH_NAME_2="uav$NUMBER2"; export OFFSET_ANGLE=-2.0944 ;waitForRos; roslaunch --wait sensor_fusion_v2 sensor_fusion_v2.launch 
 ' 
-  'motion_optimisation' 'export UAV_NAME="uav${UAV_NUMBERS[2]}"; export NEIGH_NAME_1="uav${UAV_NUMBERS[0]}";export NEIGH_NAME_2="uav${UAV_NUMBERS[1]}"; export OFFSET_ANGLE=-2.0944 ;waitForRos; roslaunch --wait motion_optimiser_v2 motion_optimiser_v2.launch 
+  'motion_optimisation' 'export UAV_NAME="uav$NUMBER3"; export NEIGH_NAME_1="uav$NUMBER1";export NEIGH_NAME_2="uav$NUMBER2"; export OFFSET_ANGLE=-2.0944 ;waitForRos; roslaunch --wait motion_optimiser_v2 motion_optimiser_v2.launch 
 ' 
 )
 
