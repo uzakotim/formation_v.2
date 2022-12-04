@@ -27,7 +27,7 @@ SESSION_NAME=mav
 
 # following commands will be executed first in each window
 # * do NOT put ; at the end
-pre_input="mkdir -p $MAIN_DIR/$PROJECT_NAME; export WORLD_FILE=./world.yaml; nums=$(python3 parser.py | tr '\n' " "); echo "UAV_NUMBERS=($nums)" > /tmp/random_uav_numbers; source /tmp/random_uav_numbers;"
+pre_input="mkdir -p $MAIN_DIR/$PROJECT_NAME; export WORLD_FILE=./world.yaml; export nums=$(python3 parser.py | tr '\n' " ");export UAV_NUMBERS=($nums)"
 
 # define commands
 # 'name' 'command'
