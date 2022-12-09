@@ -39,7 +39,7 @@ input=(
 '
   'NodeChecker' 'waitForRos; roslaunch mrs_uav_general node_crash_checker.launch
 '
-  'Nimbro' 'waitForRos; rosrun mrs_uav_general run_nimbro.py custom_configs/nimbro.yaml custom_configs/uav_names.yaml
+  'Nimbro' 'waitForRos; rosrun mrs_uav_general run_nimbro.py `pwd`/custom_configs/nimbro.yaml `pwd`/custom_configs/uav_names.yaml
 '
   'RealSense' 'waitForRos; roslaunch realsense uav_down.launch
 '
