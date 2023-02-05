@@ -11,7 +11,7 @@ windows:
   - gazebo:
       layout: tiled
       panes:
-        - waitForRos; roslaunch mrs_simulation simulation.launch world_name:=grass_plane_color_boxes gui:=true
+        - waitForRos; roslaunch mrs_simulation simulation.launch world_name:=grass_plane gui:=true
   - status:
       layout: tiled
       panes:
@@ -87,7 +87,7 @@ windows:
       layout: tiled
       panes:
         - export UAV_NAME_1="uav${UAV_NUMBERS[0]}"; export UAV_NAME_2="uav${UAV_NUMBERS[1]}"; export UAV_NAME_3="uav${UAV_NUMBERS[2]}"; waitForRos; roslaunch  mode_commander mode_commander.launch
-  - gz_rate:
-      layout: tiled
-      panes:
-        - waitForOdometry; sleep 5; gz physics -u 125 #125
+          #  - gz_rate:
+          #layout: tiled
+          #panes:
+          #- waitForOdometry; sleep 5; gz physics -u 125 #125
