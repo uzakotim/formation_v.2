@@ -496,23 +496,23 @@ void BlobDet::GrabRGBD(const sensor_msgs::ImageConstPtr& msgRGB,const sensor_msg
 
   /* show the projection image in gui (!the image will be displayed after calling cv::waitKey()!) */
 
-  if (_gui_) {
-    cv::imshow("detected_objects", cv_image+drawing);
-  }
+  // if (_gui_) {
+    // cv::imshow("detected_objects", cv_image+drawing);
+  // }
   // | ------------------------------------------------------------|
   /* publish the image with the detected edges */
-  BlobDet::publishOpenCVImage(cv_image + drawing, msg_header, color_encoding, pub_projection_);
+  // BlobDet::publishOpenCVImage(cv_image + drawing, msg_header, color_encoding, pub_projection_);
   
   /* publish the center points */
   BlobDet::publishPoints(points_array);
   
   /* publish image count */
-  BlobDet::publishImageNumber(image_counter_);
-  ros::Duration(0.001).sleep();
-  if (_gui_) {
+  // BlobDet::publishImageNumber(image_counter_);
+  // if (_gui_) {
     /* !!! needed by OpenCV to correctly show the images using cv::imshow !!! */
-    cv::waitKey(1);
-  }
+    // cv::waitKey(1);
+  // }
+  ros::Duration(0.001).sleep();
 }
 
 

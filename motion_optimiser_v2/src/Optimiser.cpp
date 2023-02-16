@@ -399,10 +399,10 @@ void Optimiser::callbackROBOT(const nav_msgs::OdometryConstPtr& odom_own, const 
       ROS_INFO("State: not moving");
   }
   //---------------------------------------------------------------
-  ros::Duration(2.0).sleep(); // 0.1
   /* output a text about it */
   ROS_INFO_THROTTLE(1, "[Optimiser]: Total of %u messages synchronised so far", (unsigned int)msg_counter_);
 
+  ros::Duration(0.1).sleep();
 }
 
 //}

@@ -419,10 +419,10 @@ void SensFuse::callbackROBOT(const mrs_msgs::PoseWithCovarianceArrayStampedConst
 
   }
   
-  ros::Duration(0.01).sleep();
   /* output a text about it */
   ROS_INFO_THROTTLE(1, "[SensFuse]: Total of %u messages synchronised so far", (unsigned int)msg_counter_);
 
+  ros::Duration(0.05).sleep();
 }
 
 //}
