@@ -12,9 +12,6 @@ windows:
       layout: tiled
       panes:
         - waitForRos; roslaunch mrs_simulation simulation.launch gui:=true world_file:=/home/timur/user_ros_workspace/src/formation_v.2/worlds/grass_plane_color_boxes.world
-# /user_ros_workspace/src/formation_v.2/worlds/grass_plane_color_boxes.world
-        # - waitForRos; roslaunch mrs_simulation simulation.launch gui:=true world_file:=/path/to/world/custom_world.world
-        #  roslaunch mrs_simulation simulation.launch world_name:=grass_plane gui:=true
   - status:
       layout: tiled
       panes:
