@@ -85,7 +85,7 @@ private:
   std::atomic<bool> select_mode_    = false;
   std::atomic<bool> record_centroid_= false;
 
-  const double max_radius {5.0};
+  const double max_radius {3.0};
   double offset_angle_;
   double offset_x;
   double offset_y;
@@ -346,7 +346,7 @@ void Optimiser::callbackROBOT(const nav_msgs::OdometryConstPtr& odom_own, const 
   {
     cv::Mat goal = (cv::Mat_<double>(2,1) << goal_x,goal_y);
     ROS_INFO("Mode: form formation");
-    if ((goal_x != -100000) || ((goal_y != -100000) || (goal_z != -100000))){
+    if ((goal_x != -10000000000) || ((goal_y != -10000000000) || (goal_z != -10000000000))){
       ROS_INFO_STREAM("Goto: x: "<<go_to[0]<<" y: "<<go_to[1]);
       go_to = Optimiser::calculateFormation(state,state_neigh1,state_neigh2,goal);
     }

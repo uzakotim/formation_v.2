@@ -157,8 +157,11 @@ private:
 
   Vector6d new_x;
   Matrix6x6d new_cov;
-  double w_q = 1.0;
-  double w_r = 50.0;
+  double w_q = 0.1;
+  double w_r = 5.0;
+  
+  // double w_q = 1.0;
+  // double w_r = 50.0;
   // | --------------------- other functions -------------------- |
   void publishImageNumber(uint64_t count);
   double getAverage(std::vector<double> v);
