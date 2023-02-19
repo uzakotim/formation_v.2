@@ -125,7 +125,7 @@ private:
 
   cv::Point3f center3D;
   cv::Mat goal_pose;
-  double max_radius {3.0};
+  double max_radius {4.0};
   
   double offset_x;
   double offset_y;
