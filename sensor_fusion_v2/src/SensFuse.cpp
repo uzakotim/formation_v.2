@@ -391,8 +391,7 @@ void SensFuse::callbackROBOT(const mrs_msgs::PoseWithCovarianceArrayStampedConst
     avg_x = total_x/(double)centroids.size();
     avg_y = total_y/(double)centroids.size();
     avg_z = total_z/(double)centroids.size();
-    ROS_INFO_STREAM("[size centroid] :" << centroids.size());
-    ROS_INFO_STREAM("[current centroid] :" <<avg_x<<" | "<<avg_y<<" | "<<avg_z);
+    ROS_INFO_STREAM("[current centroid] :" <<avg_x<<" "<<avg_y<<" "<<avg_z);
     // formation
     offset_x = max_radius*std::cos(offset_angle_);
     offset_y = max_radius*std::sin(offset_angle_);
@@ -410,9 +409,10 @@ void SensFuse::callbackROBOT(const mrs_msgs::PoseWithCovarianceArrayStampedConst
   }else
   {
     geometry_msgs::PoseWithCovarianceStamped out_msg;
-    out_msg.pose.pose.position.x = -100000;
-    out_msg.pose.pose.position.y = -100000;
-    out_msg.pose.pose.position.z = -100000;
+    out_msg.pose.pose.position.x = -10000000000;
+    // out_msg.pose.pose.position.y = -100000;
+    out_msg.pose.pose.position.y = -10000000000;
+    out_msg.pose.pose.position.z = -10000000000;
     out_msg.header.frame_id = _uav_name_ + "/" + "gps_origin";
     out_msg.header.stamp = ros::Time::now();
     pub_goal_.publish(out_msg);
@@ -420,7 +420,7 @@ void SensFuse::callbackROBOT(const mrs_msgs::PoseWithCovarianceArrayStampedConst
   }
   
   /* output a text about it */
-  ROS_INFO_THROTTLE(1, "[SensFuse]: Total of %u messages synchronised so far", (unsigned int)msg_counter_);
+  // ROS_INFO_THROTTLE(1, "[SensFuse]: Total of %u messages synchronised so far", (unsigned int)msg_counter_);
 
   ros::Duration(0.05).sleep();
 }
@@ -467,6 +467,14 @@ std::tuple<Vector6d, Matrix6x6d> SensFuse::lkfPredict(const Vector6d &x, const M
   // PUT YOUR CODE HERE
   new_x = A*x;
   new_x_cov = A*x_cov*A.transpose()+Q;
+  ROS_INFO_STREAM("[prediction covariance] :"<<'\n');
+  ROS_INFO_STREAM(new_x_cov(0,0)<<" "<<new_x_cov(0,1)<<" "<<new_x_cov(0,2)<<" "<<new_x_cov(0,3)<<" "<<new_x_cov(0,4)<<" "<<new_x_cov(0,5)<<'\n');
+  ROS_INFO_STREAM(new_x_cov(1,0)<<" "<<new_x_cov(1,1)<<" "<<new_x_cov(1,2)<<" "<<new_x_cov(1,3)<<" "<<new_x_cov(1,4)<<" "<<new_x_cov(1,5)<<'\n');
+  ROS_INFO_STREAM(new_x_cov(2,0)<<" "<<new_x_cov(2,1)<<" "<<new_x_cov(2,2)<<" "<<new_x_cov(2,3)<<" "<<new_x_cov(2,4)<<" "<<new_x_cov(2,5)<<'\n');
+  ROS_INFO_STREAM(new_x_cov(3,0)<<" "<<new_x_cov(3,1)<<" "<<new_x_cov(3,2)<<" "<<new_x_cov(3,3)<<" "<<new_x_cov(3,4)<<" "<<new_x_cov(3,5)<<'\n');
+  ROS_INFO_STREAM(new_x_cov(4,0)<<" "<<new_x_cov(4,1)<<" "<<new_x_cov(4,2)<<" "<<new_x_cov(4,3)<<" "<<new_x_cov(4,4)<<" "<<new_x_cov(4,5)<<'\n');
+  ROS_INFO_STREAM(new_x_cov(5,0)<<" "<<new_x_cov(5,1)<<" "<<new_x_cov(5,2)<<" "<<new_x_cov(5,3)<<" "<<new_x_cov(5,4)<<" "<<new_x_cov(5,5)<<'\n');
+
   
   return {new_x, new_x_cov};
 }
@@ -488,6 +496,13 @@ std::tuple<Vector6d, Matrix6x6d> SensFuse::lkfCorrect(const Vector6d &x, const M
   Id6x6.setIdentity();
 
   new_x_cov = (Id6x6 - K*H)*x_cov;
+  ROS_INFO_STREAM("[filtering covariance] :"<<'\n');
+  ROS_INFO_STREAM(new_x_cov(0,0)<<" "<<new_x_cov(0,1)<<" "<<new_x_cov(0,2)<<" "<<new_x_cov(0,3)<<" "<<new_x_cov(0,4)<<" "<<new_x_cov(0,5)<<'\n');
+  ROS_INFO_STREAM(new_x_cov(1,0)<<" "<<new_x_cov(1,1)<<" "<<new_x_cov(1,2)<<" "<<new_x_cov(1,3)<<" "<<new_x_cov(1,4)<<" "<<new_x_cov(1,5)<<'\n');
+  ROS_INFO_STREAM(new_x_cov(2,0)<<" "<<new_x_cov(2,1)<<" "<<new_x_cov(2,2)<<" "<<new_x_cov(2,3)<<" "<<new_x_cov(2,4)<<" "<<new_x_cov(2,5)<<'\n');
+  ROS_INFO_STREAM(new_x_cov(3,0)<<" "<<new_x_cov(3,1)<<" "<<new_x_cov(3,2)<<" "<<new_x_cov(3,3)<<" "<<new_x_cov(3,4)<<" "<<new_x_cov(3,5)<<'\n');
+  ROS_INFO_STREAM(new_x_cov(4,0)<<" "<<new_x_cov(4,1)<<" "<<new_x_cov(4,2)<<" "<<new_x_cov(4,3)<<" "<<new_x_cov(4,4)<<" "<<new_x_cov(4,5)<<'\n');
+  ROS_INFO_STREAM(new_x_cov(5,0)<<" "<<new_x_cov(5,1)<<" "<<new_x_cov(5,2)<<" "<<new_x_cov(5,3)<<" "<<new_x_cov(5,4)<<" "<<new_x_cov(5,5)<<'\n');
   return {new_x, new_x_cov};
 }
 

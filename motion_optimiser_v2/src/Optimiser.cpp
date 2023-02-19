@@ -90,7 +90,7 @@ private:
   double offset_x;
   double offset_y;
   double searching_circle_angle {0.0};
-  double searching_circle_radius {5.0};
+  double searching_circle_radius {3.0};
   /* ros parameters */
   const double omega {10.0/180.0};
   bool _gui_ = false;
@@ -347,7 +347,7 @@ void Optimiser::callbackROBOT(const nav_msgs::OdometryConstPtr& odom_own, const 
     cv::Mat goal = (cv::Mat_<double>(2,1) << goal_x,goal_y);
     ROS_INFO("Mode: form formation");
     if ((goal_x != -100000) || ((goal_y != -100000) || (goal_z != -100000))){
-      ROS_INFO_STREAM("goto_x: "<<go_to[0]<<", y: "<<go_to[1]);
+      ROS_INFO_STREAM("Goto: x: "<<go_to[0]<<" y: "<<go_to[1]);
       go_to = Optimiser::calculateFormation(state,state_neigh1,state_neigh2,goal);
     }
     else
@@ -360,17 +360,17 @@ void Optimiser::callbackROBOT(const nav_msgs::OdometryConstPtr& odom_own, const 
   } 
   else 
   {
+    ROS_INFO("Mode: search");
     if (searching_circle_angle >= 2*M_PI)
     {
       searching_circle_angle -= 2*M_PI; 
     }
     searching_circle_angle += omega*dt;
     ROS_INFO_STREAM("Current angle: "<<searching_circle_angle);
-    ROS_INFO_STREAM("searching x: "<<searching_circle_center_x<<","<<" y: "<<searching_circle_center_y);
+    ROS_INFO_STREAM("Circle centroid: x: "<<searching_circle_center_x<<" y: "<<searching_circle_center_y);
     double avg_x = searching_circle_center_x + searching_circle_radius*cos(searching_circle_angle);
     double avg_y = searching_circle_center_y + searching_circle_radius*sin(searching_circle_angle);
     cv::Mat goal = (cv::Mat_<double>(2,1) << avg_x + offset_x,avg_y + offset_y);
-    ROS_INFO("Mode: search");
     go_to = Optimiser::calculateFormation(state,state_neigh1,state_neigh2,goal);
     
   }
@@ -400,7 +400,7 @@ void Optimiser::callbackROBOT(const nav_msgs::OdometryConstPtr& odom_own, const 
   }
   //---------------------------------------------------------------
   /* output a text about it */
-  ROS_INFO_THROTTLE(1, "[Optimiser]: Total of %u messages synchronised so far", (unsigned int)msg_counter_);
+  // ROS_INFO_THROTTLE(1, "[Optimiser]: Total of %u messages synchronised so far", (unsigned int)msg_counter_);
 
   ros::Duration(0.1).sleep();
 }
