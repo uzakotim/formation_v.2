@@ -1,6 +1,7 @@
 /* includes //{ */
 
 /* each ROS nodelet must have these */
+
 #include <ros/ros.h>
 #include <ros/package.h>
 #include <nodelet/nodelet.h>
@@ -273,9 +274,9 @@ void Optimiser::onInit() {
   service_mode_   = nh.advertiseService(trigger_mode, &Optimiser::callback_trigger_mode,this);
   service_rec_   = nh.advertiseService(trigger_rec, &Optimiser::callback_trigger_rec,this);
   // ------------------------------------------------------------|
+
   offset_x = max_radius*std::cos(offset_angle_);
   offset_y = max_radius*std::sin(offset_angle_);
-
   // ------------------------------------------------------------|
   searching_circle_center_x = 0.0;
   searching_circle_center_y = 0.0;
@@ -323,6 +324,7 @@ void Optimiser::callbackROBOT(const nav_msgs::OdometryConstPtr& odom_own, const 
   double goal_x = (double)(goal_msg->pose.pose.position.x);
   double goal_y = (double)(goal_msg->pose.pose.position.y);
   double goal_z = (double)(goal_msg->pose.pose.position.z);
+  
 
   if(record_centroid_)
   { 
@@ -338,9 +340,9 @@ void Optimiser::callbackROBOT(const nav_msgs::OdometryConstPtr& odom_own, const 
   cv::Mat state_neigh1 = (cv::Mat_<double>(2,1) << neigh1_x,  neigh1_y);
   cv::Mat state_neigh2 = (cv::Mat_<double>(2,1) << neigh2_x, neigh2_y);
   
- 
-  std::vector<double> go_to {0,0};
 
+  std::vector<double> go_to {0,0};
+  
 
   if (select_mode_) 
   {
