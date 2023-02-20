@@ -19,7 +19,7 @@ MAIN_DIR=~/"bag_files"
 
 # the project name
 # * is used to define folder name in ~/$MAIN_DIR
-PROJECT_NAME=rename_this
+PROJECT_NAME=perception_formation
 
 # the name of the TMUX session
 # * can be used for attaching as 'tmux a -t <session name>'
@@ -35,37 +35,37 @@ pre_input="mkdir -p $MAIN_DIR/$PROJECT_NAME; export WORLD_FILE=./world.yaml; exp
 # * "new line" after the command    => the command will be called after start
 # * NO "new line" after the command => the command will wait for user's <enter>
 input=(
-  'Rosbag' 'waitForOffboard; ./record.sh
+  'Rosbag' 'export UAV_NAME="uav$NUMBER3"; waitForOffboard; ./record.sh
 '
-  'NodeChecker' 'waitForRos; roslaunch mrs_uav_general node_crash_checker.launch
+  'NodeChecker' 'export UAV_NAME="uav$NUMBER3"; waitForRos; roslaunch mrs_uav_general node_crash_checker.launch
 '
-  'Nimbro' 'waitForRos; rosrun mrs_uav_general run_nimbro.py `pwd`/custom_configs/nimbro.yaml `pwd`/custom_configs/uav_names.yaml
+  'Nimbro' 'export UAV_NAME="uav$NUMBER3"; waitForRos; rosrun mrs_uav_general run_nimbro.py `pwd`/custom_configs/nimbro.yaml `pwd`/custom_configs/uav_names.yaml
 '
-  'RealSense' 'waitForRos; roslaunch realsense uav_down.launch
+  'RealSense' 'export UAV_NAME="uav$NUMBER3"; waitForRos; roslaunch realsense uav_down.launch
 '
-  'Sensors' 'waitForRos; roslaunch mrs_uav_general sensors.launch
+  'Sensors' 'export UAV_NAME="uav$NUMBER3"; waitForRos; roslaunch mrs_uav_general sensors.launch
 '
-  'Status' 'waitForRos; roslaunch mrs_uav_status status.launch
+  'Status' 'export UAV_NAME="uav$NUMBER3"; waitForRos; roslaunch mrs_uav_status status.launch
 '
-  'Control' 'waitForRos; roslaunch mrs_uav_general core.launch config_constraint_manager:=./custom_configs/constraint_manager.yaml config_control_manager:=./custom_configs/control_manager.yaml config_mpc_tracker:=./custom_configs/mpc_tracker.yaml config_odometry:=./custom_configs/odometry.yaml config_uav_manager:=./custom_configs/uav_manager.yaml config_uav_names:=./custom_configs/uav_names.yaml config_landoff_tracker:=./custom_configs/landoff_tracker.yaml
+  'Control' 'export UAV_NAME="uav$NUMBER3"; waitForRos; roslaunch mrs_uav_general core.launch config_constraint_manager:=./custom_configs/constraint_manager.yaml config_control_manager:=./custom_configs/control_manager.yaml config_mpc_tracker:=./custom_configs/mpc_tracker.yaml config_odometry:=./custom_configs/odometry.yaml config_uav_manager:=./custom_configs/uav_manager.yaml config_uav_names:=./custom_configs/uav_names.yaml config_landoff_tracker:=./custom_configs/landoff_tracker.yaml
 '
-#  'AutoStart' 'waitForRos; roslaunch mrs_uav_general automatic_start.launch custom_config:=./custom_configs/automatic_start.yaml
+#  'AutoStart' 'export UAV_NAME="uav$NUMBER3"; waitForRos; roslaunch mrs_uav_general automatic_start.launch custom_config:=./custom_configs/automatic_start.yaml
 #'
-  'slow_odom' 'waitForRos; rostopic echo /'"$UAV_NAME"'/odometry/slow_odom
+  'slow_odom' 'export UAV_NAME="uav$NUMBER3"; waitForRos; rostopic echo /"uav$NUMBER3"/odometry/slow_odom
 '
-  'odom_diag' 'waitForRos; rostopic echo /'"$UAV_NAME"'/odometry/diagnostics
+  'odom_diag' 'export UAV_NAME="uav$NUMBER3"; waitForRos; rostopic echo /"uav$NUMBER3"/odometry/diagnostics
 '
-  'mavros_diag' 'waitForRos; rostopic echo /'"$UAV_NAME"'/mavros_interface/diagnostics
+  'mavros_diag' 'export UAV_NAME="uav$NUMBER3"; waitForRos; rostopic echo /"uav$NUMBER3"/mavros_interface/diagnostics
 '
   'kernel_log' 'tail -f /var/log/kern.log -n 100
 '
   'roscore' 'roscore
-'
-  'perception' 'export UAV_NAME="uav$NUMBER3"; waitForRos; roslaunch --wait blob_det_v2 blob_det_v2_real.launch
 ' 
-  'sensor_fusion' 'export UAV_NAME="uav$NUMBER3"; export NEIGH_NAME_1="uav$NUMBER1";export NEIGH_NAME_2="uav$NUMBER2"; export OFFSET_ANGLE=-2.0944 ;waitForRos; roslaunch --wait sensor_fusion_v2 sensor_fusion_v2.launch 
+  'perception' 'export UAV_NAME="uav$NUMBER3"; waitForRos; waitForOdometry; roslaunch blob_det_v2 blob_det_v2_real.launch
 ' 
-  'motion_optimisation' 'export UAV_NAME="uav$NUMBER3"; export NEIGH_NAME_1="uav$NUMBER1";export NEIGH_NAME_2="uav$NUMBER2"; export OFFSET_ANGLE=-2.0944 ;waitForRos; roslaunch --wait motion_optimiser_v2 motion_optimiser_v2.launch 
+  'sensor_fusion' 'export UAV_NAME="uav$NUMBER3"; export NEIGH_NAME_1="uav$NUMBER1";export NEIGH_NAME_2="uav$NUMBER2"; export OFFSET_ANGLE=-2.0944 ;waitForRos; waitForOdometry; roslaunch sensor_fusion_v2 sensor_fusion_v2.launch 
+' 
+'motion_optimisation' 'export UAV_NAME="uav$NUMBER3"; export NEIGH_NAME_1="uav$NUMBER1";export NEIGH_NAME_2="uav$NUMBER2"; export OFFSET_ANGLE=-2.0944 ;waitForRos; waitForOdometry; roslaunch motion_optimiser_v2 motion_optimiser_v2.launch 
 ' 
 )
 
