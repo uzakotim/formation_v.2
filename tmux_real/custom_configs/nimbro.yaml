@@ -22,14 +22,14 @@ topics: # topics published out of this machine to receivers specified above
    rate: 1.0
  - name: "mrs_uav_status/uav_status_short"
    compress: true # enable bz2 compression
-   rate: 10.0
+   rate: 1.0
 # my topics
  - name: "blob_det_v2/points"
    compress: true # enable bz2 compression
-   rate: 10.0
+   rate: 1.0
  - name: "sensor_fusion_v2/goal"
    compress: true # enable bz2 compression
-   rate: 10.0
+   rate: 1.0
 
 
 
