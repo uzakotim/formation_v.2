@@ -16,7 +16,7 @@ topics: # topics published out of this machine to receivers specified above
    rate: 1.0
  - name: "control_manager/mpc_tracker/predicted_trajectory"
    compress: true # enable bz2 compression
-   rate: 2.0
+   rate: 1.0
  - name: "mrs_uav_status/uav_status"
    compress: true # enable bz2 compression
    rate: 1.0
