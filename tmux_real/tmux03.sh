@@ -65,7 +65,7 @@ input=(
 ' 
   'sensor_fusion' 'export UAV_NAME="uav$NUMBER3"; export NEIGH_NAME_1="uav$NUMBER1";export NEIGH_NAME_2="uav$NUMBER2"; export OFFSET_ANGLE=-2.0944 ;waitForRos; waitForOdometry; roslaunch sensor_fusion_v2 sensor_fusion_v2.launch 
 ' 
-'motion_optimisation' 'export UAV_NAME="uav$NUMBER3"; export NEIGH_NAME_1="uav$NUMBER1";export NEIGH_NAME_2="uav$NUMBER2"; export OFFSET_ANGLE=-2.0944 ;waitForRos; waitForOdometry; roslaunch motion_optimiser_v2 motion_optimiser_v2.launch 
+  'motion_optimisation' 'export UAV_NAME="uav$NUMBER3"; export NEIGH_NAME_1="uav$NUMBER1";export NEIGH_NAME_2="uav$NUMBER2"; export OFFSET_ANGLE=-2.0944 ;waitForRos; waitForOdometry; roslaunch motion_optimiser_v2 motion_optimiser_v2.launch 
 ' 
 )
 
