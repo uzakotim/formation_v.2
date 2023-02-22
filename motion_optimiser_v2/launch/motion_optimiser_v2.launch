@@ -49,9 +49,9 @@
       <!-- <remap from="~image_in" to="mobius_front/image_raw" /> -->
       <!-- <remap from="~camera_info_in" to="mobius_front/camera_info" /> -->
       <!-- Timur Uzakov Modification  -->
-      <remap from="~odometry_own_in" to="/$(arg UAV_NAME)/odometry/odom_main/" />
-      <remap from="~odometry_neigh1_in" to="/$(arg NEIGH_NAME_1)/odometry/odom_main/" />
-      <remap from="~odometry_neigh2_in" to="/$(arg NEIGH_NAME_2)/odometry/odom_main/" />
+      <remap from="~odometry_own_in" to="/$(arg UAV_NAME)/odometry/slow_odom/" />
+      <remap from="~odometry_neigh1_in" to="/$(arg NEIGH_NAME_1)/odometry/slow_odom/" />
+      <remap from="~odometry_neigh2_in" to="/$(arg NEIGH_NAME_2)/odometry/slow_odom/" />
       <remap from="~heading_in" to="/$(arg UAV_NAME)/odometry/heading_state_out/" />
       <!-- <remap from="~points_own_in" to="/$(arg UAV_NAME)/blob_det_v2/points" /> -->
       <!-- <remap from="~points_neigh1_in" to="/$(arg NEIGH_NAME_1)/blob_det_v2/points" /> -->
