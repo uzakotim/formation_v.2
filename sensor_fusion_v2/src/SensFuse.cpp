@@ -89,6 +89,7 @@ private:
   bool _gui_ = false;
 
   std::string _uav_name_;
+  double additional_delay_;
   // | --------------------- MRS transformer -------------------- |
 
   std::unique_ptr<mrs_lib::Transformer> transformer_;
@@ -203,6 +204,7 @@ void SensFuse::onInit() {
   param_loader.loadParam("world_point/z", world_point_z_);
   // param_loader.loadParam("offset_angle/"+_uav_name_, offset_angle_);
   param_loader.loadParam("OFFSET_ANGLE", offset_angle_);
+  param_loader.loadParam("ADDITIONAL_DELAY", additional_delay_);
 
   if (!param_loader.loadedSuccessfully()) {
     ROS_ERROR("[WaypointFlier]: failed to load non-optional parameters!");
@@ -425,7 +427,7 @@ void SensFuse::callbackROBOT(const mrs_msgs::PoseWithCovarianceArrayStampedConst
   /* output a text about it */
   // ROS_INFO_THROTTLE(1, "[SensFuse]: Total of %u messages synchronised so far", (unsigned int)msg_counter_);
 
-  ros::Duration(0.05).sleep();
+  ros::Duration(0.05+additional_delay_).sleep();
 }
 
 //}
@@ -441,7 +443,7 @@ void SensFuse::callbackTimerCheckSubscribers([[maybe_unused]] const ros::TimerEv
   }
 
   if (!got_points_) {
-    ROS_WARN_THROTTLE(1.0, "Did not synchronise received points msgs since node launch.");
+    ROS_WARN_THROTTLE(1.0, "Did not synchronise RealSense points msgs since node launch.");
   }
 }
 //}

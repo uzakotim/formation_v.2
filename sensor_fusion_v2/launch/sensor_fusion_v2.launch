@@ -6,6 +6,7 @@
   <arg name="NEIGH_NAME_1" default="$(env NEIGH_NAME_1)"/>
   <arg name="NEIGH_NAME_2" default="$(env NEIGH_NAME_2)" />
   <arg name="OFFSET_ANGLE" default="$(env OFFSET_ANGLE)" />
+  <arg name="ADDITIONAL_DELAY" default="$(env ADDITIONAL_DELAY)" />
 
   <!-- set to false if the nodelet should run under an external nodelet manager -->
   <arg name="standalone" default="true" />
@@ -38,6 +39,7 @@
       <param name="NEIGH_NAME_1" type="string" value="$(env NEIGH_NAME_1)"/>
       <param name="NEIGH_NAME_2" type="string" value="$(env NEIGH_NAME_2)"/>
       <param name="OFFSET_ANGLE" type="double" value="$(arg OFFSET_ANGLE)"/>
+      <param name="ADDITIONAL_DELAY" type="double" value="$(arg ADDITIONAL_DELAY)"/>
       <!-- ROS parameters config file -->
       <rosparam file="$(find sensor_fusion_v2)/config/default.yaml" />
       <rosparam file="$(find sensor_fusion_v2)/config/$(arg RUN_TYPE).yaml" />
