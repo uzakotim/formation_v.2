@@ -53,9 +53,9 @@ services:
 # my services
   - name: "control_manager/reference"
     type: mrs_msgs/ReferenceStampedSrv
-  - name: "/trigger_motion"
+  - name: "trigger_motion"
     type: std_srvs/Trigger
-  - name: "/record_centroid"
+  - name: "record_centroid"
     type: std_srvs/Trigger
-  - name: "/trigger_mode"
+  - name: "trigger_mode"
     type: std_srvs/Trigger

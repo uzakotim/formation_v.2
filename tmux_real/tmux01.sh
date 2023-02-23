@@ -63,9 +63,11 @@ input=(
 '
   'perception' 'export UAV_NAME="uav$NUMBER1"; waitForRos; waitForOdometry; roslaunch blob_det_v2 blob_det_v2_real.launch 
 '
-  'sensor_fusion' 'export UAV_NAME="uav$NUMBER1"; export NEIGH_NAME_1="uav$NUMBER2";export NEIGH_NAME_2="uav$NUMBER3"; export OFFSET_ANGLE=0.0; waitForRos; waitForOdometry; roslaunch sensor_fusion_v2 sensor_fusion_v2.launch 
+  'sensor_fusion' 'export UAV_NAME="uav$NUMBER1"; export NEIGH_NAME_1="uav$NUMBER2";export NEIGH_NAME_2="uav$NUMBER3"; export OFFSET_ANGLE=0.0; export ADDITIONAL_DELAY=0.01; waitForRos; waitForOdometry; roslaunch sensor_fusion_v2 sensor_fusion_v2.launch 
 ' 
-  'motion_optimisation' 'export UAV_NAME="uav$NUMBER1"; export NEIGH_NAME_1="uav$NUMBER2";export NEIGH_NAME_2="uav$NUMBER3"; export OFFSET_ANGLE=0.0; waitForRos; waitForOdometry; roslaunch motion_optimiser_v2 motion_optimiser_v2.launch 
+  'motion_optimisation' 'export UAV_NAME="uav$NUMBER1"; export NEIGH_NAME_1="uav$NUMBER2";export NEIGH_NAME_2="uav$NUMBER3"; export OFFSET_ANGLE=0.0; export ADDITIONAL_DELAY=0.01; waitForRos; waitForOdometry; roslaunch motion_optimiser_v2 motion_optimiser_v2.launch 
+'
+  'commander' 'export UAV_NAME_1="uav$NUMBER1"; export UAV_NAME_2="uav$NUMBER2"; export UAV_NAME_3="uav$NUMBER3"; waitForRos; roslaunch  mode_commander mode_commander.launch
 '
 )
 
