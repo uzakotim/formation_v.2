@@ -157,8 +157,8 @@ private:
   const cv::Scalar                  color_red_two_min = cv::Scalar(175,100,75);      //RED
   const cv::Scalar                  color_red_two_max = cv::Scalar(180,255,255);    //RED
     
-  const cv::Scalar                  color_blue_min = cv::Scalar(88,100,75);        //BLUE
-  const cv::Scalar                  color_blue_max = cv::Scalar(130,255,255);       //BLUE
+  const cv::Scalar                  color_blue_min = cv::Scalar(75,100,75);        //BLUE
+  const cv::Scalar                  color_blue_max = cv::Scalar(150,255,255);       //BLUE
   
   const cv::Scalar                  color_orange_min = cv::Scalar(15,150,150);       //ORANGE
   const cv::Scalar                  color_orange_max = cv::Scalar(30,255,255);     //ORANGE
@@ -272,8 +272,8 @@ void BlobDet::onInit() {
   // | ------------------ initialize publishers ----------------- |
   pub_test_       = nh.advertise<std_msgs::UInt64>("test_publisher", 1);
   pub_points_     = nh.advertise<mrs_msgs::PoseWithCovarianceArrayStamped>("points", 1);
-  pub_edges_      = it.advertise("detected_blobs", 1);
-  pub_projection_ = it.advertise("projected_point", 1);
+  pub_edges_      = it.advertise("edges", 1);
+  pub_projection_ = it.advertise("detected_blobs", 1);
 
   ROS_INFO_STREAM("pubs ok");
   // | -------------------- initialize timers ------------------- |
@@ -501,7 +501,7 @@ void BlobDet::GrabRGBD(const sensor_msgs::ImageConstPtr& msgRGB,const sensor_msg
   // }
   // | ------------------------------------------------------------|
   /* publish the image with the detected edges */
-  // BlobDet::publishOpenCVImage(cv_image + drawing, msg_header, color_encoding, pub_projection_);
+  BlobDet::publishOpenCVImage(cv_image + drawing, msg_header, color_encoding, pub_projection_);
   
   /* publish the center points */
   BlobDet::publishPoints(points_array);
