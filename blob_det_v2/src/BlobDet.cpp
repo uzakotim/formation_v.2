@@ -317,7 +317,7 @@ void BlobDet::GrabRGBD(const sensor_msgs::ImageConstPtr& msgRGB,const sensor_msg
   ros::Duration duration = time_begin-time_last_image_;
   double dt = duration.toSec();
   
-  ROS_INFO("Slept for %lf secs", dt);
+  // ROS_INFO("Slept for %lf secs", dt);
   // ROS_INFO_STREAM("Sync ok");
 
   const std::string color_encoding     = "bgr8";
@@ -343,10 +343,10 @@ void BlobDet::GrabRGBD(const sensor_msgs::ImageConstPtr& msgRGB,const sensor_msg
   const cv_bridge::CvImageConstPtr cv_ptrRGB        = cv_bridge::toCvShare(msgRGB);
   const cv_bridge::CvImageConstPtr cv_ptrD          = cv_bridge::toCvShare(msgD);
 
-
+  ROS_INFO_STREAM("[Running]");
  
   /* output a text about it */
-  ROS_INFO_THROTTLE(1, "[BlobDet]: Total of %u images received so far", (unsigned int)image_counter_);
+  // ROS_INFO_THROTTLE(1, "[BlobDet]: Total of %u images received so far", (unsigned int)image_counter_);
   // | -------------- Detect blob using OpenCV --------------------------------|
 
 
@@ -395,7 +395,7 @@ void BlobDet::GrabRGBD(const sensor_msgs::ImageConstPtr& msgRGB,const sensor_msg
       
                   const geometry_msgs::PoseStamped global = BlobDet::projectWorldPointToGlobal(cv_image, msg_header.stamp, center3D.x, center3D.y, center3D.z);
                   // | --------- Timur Uzakov Modification -------- |
-                  ROS_INFO_STREAM("x: "<<global.pose.position.x<<"y: "<<global.pose.position.y<<"z: "<<global.pose.position.z);
+                  // ROS_INFO_STREAM("x: "<<global.pose.position.x<<"y: "<<global.pose.position.y<<"z: "<<global.pose.position.z);
                   
                   mrs_msgs::PoseWithCovarianceIdentified detected_point;
                   detected_point.pose.position.x = global.pose.position.x;
@@ -432,7 +432,7 @@ void BlobDet::GrabRGBD(const sensor_msgs::ImageConstPtr& msgRGB,const sensor_msg
       
                   const geometry_msgs::PoseStamped global = BlobDet::projectWorldPointToGlobal(cv_image, msg_header.stamp, center3D.x, center3D.y, center3D.z);
                   // | --------- Timur Uzakov Modification -------- |
-                  ROS_INFO_STREAM("x: "<<global.pose.position.x<<"y: "<<global.pose.position.y<<"z: "<<global.pose.position.z);
+                  // ROS_INFO_STREAM("x: "<<global.pose.position.x<<"y: "<<global.pose.position.y<<"z: "<<global.pose.position.z);
                   
                   mrs_msgs::PoseWithCovarianceIdentified detected_point;
                   detected_point.pose.position.x = global.pose.position.x;
@@ -468,7 +468,7 @@ void BlobDet::GrabRGBD(const sensor_msgs::ImageConstPtr& msgRGB,const sensor_msg
       
                   const geometry_msgs::PoseStamped global = BlobDet::projectWorldPointToGlobal(cv_image, msg_header.stamp, center3D.x, center3D.y, center3D.z);
                   // | --------- Timur Uzakov Modification -------- |
-                  ROS_INFO_STREAM("x: "<<global.pose.position.x<<"y: "<<global.pose.position.y<<"z: "<<global.pose.position.z);
+                  // ROS_INFO_STREAM("x: "<<global.pose.position.x<<"y: "<<global.pose.position.y<<"z: "<<global.pose.position.z);
                   
                   mrs_msgs::PoseWithCovarianceIdentified detected_point;
                   detected_point.pose.position.x = global.pose.position.x;

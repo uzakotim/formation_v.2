@@ -302,7 +302,7 @@ void Optimiser::callbackROBOT(const nav_msgs::OdometryConstPtr& odom_own, const 
   ros::Duration duration = time_begin-time_last_image_;
   double dt = duration.toSec();
   
-  ROS_INFO("Slept for %lf secs", dt);
+  // ROS_INFO("Slept for %lf secs", dt);
 
  
   /* update the checks-related variables (in a thread-safe manner) */
@@ -330,13 +330,13 @@ void Optimiser::callbackROBOT(const nav_msgs::OdometryConstPtr& odom_own, const 
 
   if(record_centroid_)
   { 
-    ROS_INFO("Recording centroid: on");
+    ROS_INFO("[recording centroid] ON\n");
     searching_circle_center_x = (own_x+neigh1_x+neigh2_x)/3.0;
     searching_circle_center_y = (own_y+neigh1_y+neigh2_y)/3.0;
   }
   else
   {
-    ROS_INFO("Recording centroid: off");
+    ROS_INFO("[recording centroid] OFF\n");
   }
   cv::Mat state = (cv::Mat_<double>(2,1) << own_x,  own_y);
   cv::Mat state_neigh1 = (cv::Mat_<double>(2,1) << neigh1_x,  neigh1_y);
@@ -349,29 +349,32 @@ void Optimiser::callbackROBOT(const nav_msgs::OdometryConstPtr& odom_own, const 
   if (select_mode_) 
   {
     cv::Mat goal = (cv::Mat_<double>(2,1) << goal_x,goal_y);
-    ROS_INFO("Mode: form formation");
+    ROS_INFO("[mode] form formation");
     if ((goal_x != -10000000000) || ((goal_y != -10000000000) || (goal_z != -10000000000))){
-      ROS_INFO_STREAM("Goto: x: "<<go_to[0]<<" y: "<<go_to[1]);
+      ROS_INFO_STREAM("[goto] x: "<<go_to[0]<<" y: "<<go_to[1]);
+      ROS_INFO("\n");
       go_to = Optimiser::calculateFormation(state,state_neigh1,state_neigh2,goal);
     }
     else
     {
-      ROS_INFO("Cannot detect objects");
-      ROS_INFO("Please, select searching mode");
+      ROS_INFO("[cannot detect objects] Please, select searching mode");
+      ROS_INFO("\n");
       go_to[0] = own_x;
       go_to[1] = own_y;
     }
   } 
   else 
   {
-    ROS_INFO("Mode: search");
+    ROS_INFO("[mode] search");
     if (searching_circle_angle >= 2*M_PI)
     {
       searching_circle_angle -= 2*M_PI; 
     }
     searching_circle_angle += omega*dt;
-    ROS_INFO_STREAM("Current angle: "<<searching_circle_angle);
-    ROS_INFO_STREAM("Circle centroid: x: "<<searching_circle_center_x<<" y: "<<searching_circle_center_y);
+    ROS_INFO_STREAM("[current angle] "<<searching_circle_angle);
+    ROS_INFO("\n");
+    ROS_INFO_STREAM("[circle centroid] x: "<<searching_circle_center_x<<" y: "<<searching_circle_center_y);
+    ROS_INFO("\n");
     double avg_x = searching_circle_center_x + searching_circle_radius*cos(searching_circle_angle);
     double avg_y = searching_circle_center_y + searching_circle_radius*sin(searching_circle_angle);
     cv::Mat goal = (cv::Mat_<double>(2,1) << avg_x + offset_x,avg_y + offset_y);
@@ -388,20 +391,21 @@ void Optimiser::callbackROBOT(const nav_msgs::OdometryConstPtr& odom_own, const 
   // srv.request.reference.heading    = -0.1; 
 
   if (allow_motion_){
-      ROS_INFO("State: moving");
+      ROS_INFO("[moving] ON\n");
       if (client.call(srv))
       {
-          ROS_INFO("Successfull calling service\n");
+          ROS_INFO("[successfull calling service]\n");
       }
       else 
       {
-          ROS_ERROR("Could not publish\n");
+          ROS_ERROR("[could not publish]\n");
       }
   }
   else
   {
-      ROS_INFO("State: not moving");
+      ROS_INFO("[moving] OFF\n");
   }
+  ROS_INFO("\n");
   //---------------------------------------------------------------
   /* output a text about it */
   // ROS_INFO_THROTTLE(1, "[Optimiser]: Total of %u messages synchronised so far", (unsigned int)msg_counter_);

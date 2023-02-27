@@ -275,7 +275,7 @@ void SensFuse::callbackROBOT(const mrs_msgs::PoseWithCovarianceArrayStampedConst
   ros::Duration duration = time_begin-time_last_image_;
   double dt = duration.toSec();
   
-  ROS_INFO("Slept for %lf secs", dt);
+  // ROS_INFO("Slept for %lf secs", dt);
 
   /* update the checks-related variables (in a thread-safe manner) */
   {
@@ -396,7 +396,7 @@ void SensFuse::callbackROBOT(const mrs_msgs::PoseWithCovarianceArrayStampedConst
     avg_x = total_x/(double)centroids.size();
     avg_y = total_y/(double)centroids.size();
     avg_z = total_z/(double)centroids.size();
-    ROS_INFO_STREAM("[current centroid] :" <<avg_x<<" "<<avg_y<<" "<<avg_z);
+    ROS_INFO_STREAM("[current centroid] " <<avg_x<<" "<<avg_y<<" "<<avg_z);
     // formation
     offset_x = max_radius*std::cos(offset_angle_);
     offset_y = max_radius*std::sin(offset_angle_);
