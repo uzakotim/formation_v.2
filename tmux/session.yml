@@ -36,29 +36,29 @@ windows:
         - export UAV_NAME="uav${UAV_NUMBERS[0]}"; waitForSimulation; roslaunch mrs_uav_general automatic_start.launch
         - export UAV_NAME="uav${UAV_NUMBERS[1]}"; waitForSimulation; roslaunch mrs_uav_general automatic_start.launch
         - export UAV_NAME="uav${UAV_NUMBERS[2]}"; waitForSimulation; roslaunch mrs_uav_general automatic_start.launch
-  # - takeoff:
-      # layout: tiled
-      # panes:
+  - takeoff:
+      layout: tiled
+      panes:
         # { "uav${UAV_NUMBERS[1]}"
-        # - 'export UAV_NAME="uav${UAV_NUMBERS[0]}";
-          # waitForControl;
-          # rosservice call /$UAV_NAME/mavros/cmd/arming 1;
-          # sleep 2;
-          # rosservice call /$UAV_NAME/mavros/set_mode 0 offboard'
-        #}
+        - 'export UAV_NAME="uav${UAV_NUMBERS[0]}";
+          waitForControl;
+          rosservice call /$UAV_NAME/mavros/cmd/arming 1;
+          sleep 2;
+          rosservice call /$UAV_NAME/mavros/set_mode 0 offboard'
+        # }
         # { "uav${UAV_NUMBERS[2]}"
-        # - 'export UAV_NAME="uav${UAV_NUMBERS[1]}";
-          # waitForControl;
-          # rosservice call /$UAV_NAME/mavros/cmd/arming 1;
-          # sleep 2;
-          # rosservice call /$UAV_NAME/mavros/set_mode 0 offboard'
+        - 'export UAV_NAME="uav${UAV_NUMBERS[1]}";
+          waitForControl;
+          rosservice call /$UAV_NAME/mavros/cmd/arming 1;
+          sleep 2;
+          rosservice call /$UAV_NAME/mavros/set_mode 0 offboard'
         # }
         # { "uav${UAV_NUMBERS[3]}"
-        # - 'export UAV_NAME="uav${UAV_NUMBERS[2]}";
-          # waitForControl;
-          # rosservice call /$UAV_NAME/mavros/cmd/arming 1;
-          # sleep 2;
-          # rosservice call /$UAV_NAME/mavros/set_mode 0 offboard'
+        - 'export UAV_NAME="uav${UAV_NUMBERS[2]}";
+          waitForControl;
+          rosservice call /$UAV_NAME/mavros/cmd/arming 1;
+          sleep 2;
+          rosservice call /$UAV_NAME/mavros/set_mode 0 offboard'
         # }
  
   # - gazebo_camera_follow:

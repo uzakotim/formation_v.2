@@ -80,6 +80,7 @@ class SensFuse : public nodelet::Nodelet {
 public:
   /* onInit() is called when nodelet is launched (similar to main() in regular node) */
   virtual void onInit();
+  std::mutex mutex_counters_sens_fuse;           // to prevent data races when accessing the following variables from multiple threads
 
 private:
   /* flags */
@@ -116,7 +117,6 @@ private:
 
   // | --------- variables, related to message checking --------- |
 
-  std::mutex mutex_counters_;           // to prevent data races when accessing the following variables from multiple threads
   ros::Time  time_last_image_;          // time stamp of the last received image message
   ros::Time  time_last_camera_info_;    // time stamp of the last received camera info message
   uint64_t   msg_counter_   = 0;      // counts the number of images received
@@ -279,7 +279,7 @@ void SensFuse::callbackROBOT(const mrs_msgs::PoseWithCovarianceArrayStampedConst
 
   /* update the checks-related variables (in a thread-safe manner) */
   {
-    std::scoped_lock lock(mutex_counters_);
+    std::scoped_lock lock(mutex_counters_sens_fuse);
     got_points_   = true;  // indicates whether at least one image message was received
     msg_counter_++;
     time_last_image_ = ros::Time::now();
@@ -443,7 +443,7 @@ void SensFuse::callbackTimerCheckSubscribers([[maybe_unused]] const ros::TimerEv
   }
 
   if (!got_points_) {
-    ROS_WARN_THROTTLE(1.0, "Did not synchronise RealSense points msgs since node launch.");
+    ROS_WARN_THROTTLE(1, "Did not synchronise RealSense points msgs since node launch.");
   }
 }
 //}

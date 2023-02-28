@@ -78,6 +78,7 @@ public:
   boost::array<float,4> goal = {0.0, 0.0, 0.0, 0.0};
   ros::ServiceClient client;
   mrs_msgs::ReferenceStampedSrv srv;
+  std::mutex mutex_counters_opti;           // to prevent data races when accessing the following variables from multiple threads
 
 private:
   /* flags */
@@ -126,7 +127,6 @@ private:
 
   // | --------- variables, related to message checking --------- |
 
-  std::mutex mutex_counters_;           // to prevent data races when accessing the following variables from multiple threads
   ros::Time  time_last_image_;          // time stamp of the last received image message
   ros::Time  time_last_camera_info_;    // time stamp of the last received camera info message
   uint64_t   msg_counter_   = 0;      // counts the number of images received
@@ -307,7 +307,7 @@ void Optimiser::callbackROBOT(const nav_msgs::OdometryConstPtr& odom_own, const 
  
   /* update the checks-related variables (in a thread-safe manner) */
   {
-    std::scoped_lock lock(mutex_counters_);
+    std::scoped_lock lock(mutex_counters_opti);
     got_odometry_own_          = true;  // indicates whether at least one image message was received
     msg_counter_++;
     time_last_image_ = ros::Time::now();
@@ -330,13 +330,13 @@ void Optimiser::callbackROBOT(const nav_msgs::OdometryConstPtr& odom_own, const 
 
   if(record_centroid_)
   { 
-    ROS_INFO("[recording centroid] ON\n");
+    ROS_INFO("[recording centroid] ON");
     searching_circle_center_x = (own_x+neigh1_x+neigh2_x)/3.0;
     searching_circle_center_y = (own_y+neigh1_y+neigh2_y)/3.0;
   }
   else
   {
-    ROS_INFO("[recording centroid] OFF\n");
+    ROS_INFO("[recording centroid] OFF");
   }
   cv::Mat state = (cv::Mat_<double>(2,1) << own_x,  own_y);
   cv::Mat state_neigh1 = (cv::Mat_<double>(2,1) << neigh1_x,  neigh1_y);
@@ -353,13 +353,11 @@ void Optimiser::callbackROBOT(const nav_msgs::OdometryConstPtr& odom_own, const 
     ROS_INFO("[mode] form formation");
     if ((goal_x != -10000000000) || ((goal_y != -10000000000) || (goal_z != -10000000000))){
       ROS_INFO_STREAM("[goto] x: "<<go_to[0]<<" y: "<<go_to[1]);
-      ROS_INFO("\n");
       go_to = Optimiser::calculateFormation(state,state_neigh1,state_neigh2,goal);
     }
     else
     {
       ROS_INFO("[cannot detect objects] Please, select searching mode");
-      ROS_INFO("\n");
       go_to[0] = own_x;
       go_to[1] = own_y;
     }
@@ -373,9 +371,7 @@ void Optimiser::callbackROBOT(const nav_msgs::OdometryConstPtr& odom_own, const 
     }
     searching_circle_angle += omega*dt;
     ROS_INFO_STREAM("[current angle] "<<searching_circle_angle);
-    ROS_INFO("\n");
     ROS_INFO_STREAM("[circle centroid] x: "<<searching_circle_center_x<<" y: "<<searching_circle_center_y);
-    ROS_INFO("\n");
     double avg_x = searching_circle_center_x + searching_circle_radius*cos(searching_circle_angle);
     double avg_y = searching_circle_center_y + searching_circle_radius*sin(searching_circle_angle);
     cv::Mat goal = (cv::Mat_<double>(2,1) << avg_x + offset_x,avg_y + offset_y);
@@ -392,19 +388,19 @@ void Optimiser::callbackROBOT(const nav_msgs::OdometryConstPtr& odom_own, const 
   // srv.request.reference.heading    = -0.1; 
 
   if (allow_motion_){
-      ROS_INFO("[moving] ON\n");
+      ROS_INFO("[moving] ON");
       if (client.call(srv))
       {
-          ROS_INFO("[successfull calling service]\n");
+          ROS_INFO("[successfull calling service]");
       }
       else 
       {
-          ROS_ERROR("[could not publish]\n");
+          ROS_ERROR("[could not publish]");
       }
   }
   else
   {
-      ROS_INFO("[moving] OFF\n");
+      ROS_INFO("[moving] OFF");
   }
   ROS_INFO("\n");
   //---------------------------------------------------------------
@@ -522,27 +518,27 @@ double Optimiser::sign(double input)
 
 double Optimiser::Cost(double x,double y,double x_prev,double y_prev,double obs_x,double obs_y, double obs_2_x,double obs_2_y,double goal_x,double goal_y)
 {
-  const double width_goal = 10000;
-  const double width_obst = 10000;
+  const double width_goal = 25;
+  const double width_obst = 100;
   const double height = 5;
-  const double goal_depth = 2;
+  const double goal_depth = 5;
   return 0.5*std::pow((x-x_prev),2) + 0.5*std::pow((y-y_prev),2) + 0.5*std::pow((y-goal_y),2) + 0.5*std::pow((x-goal_x),2) + height + height*std::exp(-(std::pow((y-obs_y),2)/width_obst))*std::exp(-(std::pow((x-obs_x),2))/width_obst)+ height*std::exp(-std::pow((y-obs_2_y),2)/width_obst)*exp(-std::pow((x-obs_2_x),2)/width_obst) - goal_depth*std::exp(-std::pow((x-goal_x),2)/width_goal)*std::exp(-(std::pow((y-goal_y),2)/width_goal));
 }
 double Optimiser::grad_x(double x,double y,double x_prev,double y_prev,double obs_x,double obs_y, double obs_2_x,double obs_2_y,double goal_x,double goal_y)
 {
-  const double width_goal = 10000;
-  const double width_obst = 10000;
+  const double width_goal = 25;
+  const double width_obst = 100;
   const double height = 5;
-  const double goal_depth = 2;
+  const double goal_depth = 5;
   return 1.0*(x-x_prev) + 1.0*(x-goal_x) + height*std::exp(-(std::pow((y-obs_y),2))/width_obst)*std::exp(-(std::pow((x-obs_x),2))/width_obst)*(-(2*(x-obs_x)/width_obst)) + height*std::exp(-(std::pow((y-obs_2_y),2))/width_obst)*std::exp(-(std::pow((x-obs_2_x),2))/width_obst)*(-(2*(x-obs_2_x)/width_obst)) - goal_depth*std::exp(-(std::pow((x-goal_x),2))/width_goal)*std::exp(-(std::pow((y-goal_y),2)/width_goal))*(-(2*(x-goal_x)/width_goal));
 
 }
 double Optimiser::grad_y(double x,double y,double x_prev,double y_prev,double obs_x,double obs_y, double obs_2_x,double obs_2_y,double goal_x,double goal_y)
 {
-  const double width_goal = 10000;
-  const double width_obst = 10000;
+  const double width_goal = 25;
+  const double width_obst = 100;
   const double height = 5;
-  const double goal_depth = 2;
+  const double goal_depth = 5;
   return 1.0*(y-y_prev) + 1.0*(y-goal_y) + height*std::exp(-(std::pow((y-obs_y),2))/width_obst)*std::exp(-(std::pow((x-obs_x),2))/width_obst)*(-(2*(y-obs_y)/width_obst)) + height*std::exp(-(std::pow((y-obs_2_y),2))/width_obst)*std::exp(-(std::pow((x-obs_2_x),2))/width_obst)*(-(2*(y-obs_2_y)/width_obst)) - goal_depth*std::exp(-(std::pow((x-goal_x),2))/width_goal)*std::exp(-(std::pow((y-goal_y),2)/width_goal))*(-(2*(y-goal_y)/width_goal));
 }
 }  // namespace sensor_fusion_example
