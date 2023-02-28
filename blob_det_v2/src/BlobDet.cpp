@@ -395,7 +395,7 @@ void BlobDet::GrabRGBD(const sensor_msgs::ImageConstPtr& msgRGB,const sensor_msg
       
                   const geometry_msgs::PoseStamped global = BlobDet::projectWorldPointToGlobal(cv_image, msg_header.stamp, center3D.x, center3D.y, center3D.z);
                   // | --------- Timur Uzakov Modification -------- |
-                  // ROS_INFO_STREAM("x: "<<global.pose.position.x<<"y: "<<global.pose.position.y<<"z: "<<global.pose.position.z);
+                  ROS_INFO_STREAM("[RED] x: "<<global.pose.position.x<<"y: "<<global.pose.position.y<<"z: "<<global.pose.position.z);
                   
                   mrs_msgs::PoseWithCovarianceIdentified detected_point;
                   detected_point.pose.position.x = global.pose.position.x;
@@ -432,7 +432,7 @@ void BlobDet::GrabRGBD(const sensor_msgs::ImageConstPtr& msgRGB,const sensor_msg
       
                   const geometry_msgs::PoseStamped global = BlobDet::projectWorldPointToGlobal(cv_image, msg_header.stamp, center3D.x, center3D.y, center3D.z);
                   // | --------- Timur Uzakov Modification -------- |
-                  // ROS_INFO_STREAM("x: "<<global.pose.position.x<<"y: "<<global.pose.position.y<<"z: "<<global.pose.position.z);
+                  ROS_INFO_STREAM("[BLUE] x: "<<global.pose.position.x<<"y: "<<global.pose.position.y<<"z: "<<global.pose.position.z);
                   
                   mrs_msgs::PoseWithCovarianceIdentified detected_point;
                   detected_point.pose.position.x = global.pose.position.x;
@@ -468,7 +468,7 @@ void BlobDet::GrabRGBD(const sensor_msgs::ImageConstPtr& msgRGB,const sensor_msg
       
                   const geometry_msgs::PoseStamped global = BlobDet::projectWorldPointToGlobal(cv_image, msg_header.stamp, center3D.x, center3D.y, center3D.z);
                   // | --------- Timur Uzakov Modification -------- |
-                  // ROS_INFO_STREAM("x: "<<global.pose.position.x<<"y: "<<global.pose.position.y<<"z: "<<global.pose.position.z);
+                  ROS_INFO_STREAM("[PURPLE] x: "<<global.pose.position.x<<"y: "<<global.pose.position.y<<"z: "<<global.pose.position.z);
                   
                   mrs_msgs::PoseWithCovarianceIdentified detected_point;
                   detected_point.pose.position.x = global.pose.position.x;
