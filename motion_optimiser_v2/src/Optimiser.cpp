@@ -342,7 +342,7 @@ void Optimiser::callbackROBOT(const nav_msgs::OdometryConstPtr& odom_own, const 
   cv::Mat state_neigh1 = (cv::Mat_<double>(2,1) << neigh1_x,  neigh1_y);
   cv::Mat state_neigh2 = (cv::Mat_<double>(2,1) << neigh2_x, neigh2_y);
   
-  ROS_INFO_STREAM("[own position] x: "<<own_x)<<" y: "<<own_y);
+  ROS_INFO_STREAM("[own position] x: "<<own_x<<" y: "<<own_y);
 
   std::vector<double> go_to {0,0};
   
