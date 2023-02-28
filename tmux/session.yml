@@ -69,20 +69,20 @@ windows:
       layout: tiled
       panes:
         - export UAV_NAME="uav${UAV_NUMBERS[0]}"; waitForRos; waitForOdometry; roslaunch blob_det_v2 blob_det_v2_sim.launch 
-        - export UAV_NAME="uav${UAV_NUMBERS[0]}"; export NEIGH_NAME_1="uav${UAV_NUMBERS[1]}";export NEIGH_NAME_2="uav${UAV_NUMBERS[2]}"; export OFFSET_ANGLE=0.0; export ADDITIONAL_DELAY=0.01; waitForRos; waitForOdometry; roslaunch sensor_fusion_v2 sensor_fusion_v2.launch 
-        - export UAV_NAME="uav${UAV_NUMBERS[0]}"; export NEIGH_NAME_1="uav${UAV_NUMBERS[1]}";export NEIGH_NAME_2="uav${UAV_NUMBERS[2]}"; export OFFSET_ANGLE=0.0; export ADDITIONAL_DELAY=0.01; waitForRos;  waitForOdometry;roslaunch motion_optimiser_v2 motion_optimiser_v2.launch 
+        - export UAV_NAME="uav${UAV_NUMBERS[0]}"; export NEIGH_NAME_1="uav${UAV_NUMBERS[1]}";export NEIGH_NAME_2="uav${UAV_NUMBERS[2]}"; export OFFSET_ANGLE=0.0; export ADDITIONAL_DELAY=0.1; waitForRos; waitForOdometry; roslaunch sensor_fusion_v2 sensor_fusion_v2.launch 
+        - export UAV_NAME="uav${UAV_NUMBERS[0]}"; export NEIGH_NAME_1="uav${UAV_NUMBERS[1]}";export NEIGH_NAME_2="uav${UAV_NUMBERS[2]}"; export OFFSET_ANGLE=0.0; export ADDITIONAL_DELAY=0.1; waitForRos;  waitForOdometry;roslaunch motion_optimiser_v2 motion_optimiser_v2.launch 
   - uav2:
       layout: tiled
       panes:
         - export UAV_NAME="uav${UAV_NUMBERS[1]}"; waitForRos;  waitForOdometry;roslaunch blob_det_v2 blob_det_v2_sim.launch 
-        - export UAV_NAME="uav${UAV_NUMBERS[1]}"; export NEIGH_NAME_1="uav${UAV_NUMBERS[0]}";export NEIGH_NAME_2="uav${UAV_NUMBERS[2]}"; export OFFSET_ANGLE=2.0944 ;export ADDITIONAL_DELAY=0.02; waitForRos;  waitForOdometry;roslaunch sensor_fusion_v2 sensor_fusion_v2.launch 
-        - export UAV_NAME="uav${UAV_NUMBERS[1]}"; export NEIGH_NAME_1="uav${UAV_NUMBERS[0]}";export NEIGH_NAME_2="uav${UAV_NUMBERS[2]}"; export OFFSET_ANGLE=2.0944 ;export ADDITIONAL_DELAY=0.02;waitForRos;  waitForOdometry;roslaunch motion_optimiser_v2 motion_optimiser_v2.launch 
+        - export UAV_NAME="uav${UAV_NUMBERS[1]}"; export NEIGH_NAME_1="uav${UAV_NUMBERS[0]}";export NEIGH_NAME_2="uav${UAV_NUMBERS[2]}"; export OFFSET_ANGLE=2.0944 ;export ADDITIONAL_DELAY=0.2; waitForRos;  waitForOdometry;roslaunch sensor_fusion_v2 sensor_fusion_v2.launch 
+        - export UAV_NAME="uav${UAV_NUMBERS[1]}"; export NEIGH_NAME_1="uav${UAV_NUMBERS[0]}";export NEIGH_NAME_2="uav${UAV_NUMBERS[2]}"; export OFFSET_ANGLE=2.0944 ;export ADDITIONAL_DELAY=0.2; waitForRos;  waitForOdometry;roslaunch motion_optimiser_v2 motion_optimiser_v2.launch 
   - uav3:
       layout: tiled
       panes:
         - export UAV_NAME="uav${UAV_NUMBERS[2]}"; waitForRos;  waitForOdometry;roslaunch blob_det_v2 blob_det_v2_sim.launch 
-        - export UAV_NAME="uav${UAV_NUMBERS[2]}"; export NEIGH_NAME_1="uav${UAV_NUMBERS[0]}";export NEIGH_NAME_2="uav${UAV_NUMBERS[1]}"; export OFFSET_ANGLE=-2.0944 ;export ADDITIONAL_DELAY=0.03;waitForRos;  waitForOdometry;roslaunch sensor_fusion_v2 sensor_fusion_v2.launch 
-        - export UAV_NAME="uav${UAV_NUMBERS[2]}"; export NEIGH_NAME_1="uav${UAV_NUMBERS[0]}";export NEIGH_NAME_2="uav${UAV_NUMBERS[1]}"; export OFFSET_ANGLE=-2.0944 ;export ADDITIONAL_DELAY=0.03;waitForRos;  waitForOdometry;roslaunch motion_optimiser_v2 motion_optimiser_v2.launch 
+        - export UAV_NAME="uav${UAV_NUMBERS[2]}"; export NEIGH_NAME_1="uav${UAV_NUMBERS[0]}";export NEIGH_NAME_2="uav${UAV_NUMBERS[1]}"; export OFFSET_ANGLE=-2.0944 ;export ADDITIONAL_DELAY=0.3; waitForRos;  waitForOdometry;roslaunch sensor_fusion_v2 sensor_fusion_v2.launch 
+        - export UAV_NAME="uav${UAV_NUMBERS[2]}"; export NEIGH_NAME_1="uav${UAV_NUMBERS[0]}";export NEIGH_NAME_2="uav${UAV_NUMBERS[1]}"; export OFFSET_ANGLE=-2.0944 ;export ADDITIONAL_DELAY=0.3; waitForRos;  waitForOdometry;roslaunch motion_optimiser_v2 motion_optimiser_v2.launch 
   - mode:
       layout: tiled
       panes:
