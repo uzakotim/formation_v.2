@@ -61,7 +61,13 @@
         "iomanip": "cpp",
         "numeric": "cpp",
         "optional": "cpp",
-        "streambuf": "cpp"
+        "streambuf": "cpp",
+        "compare": "cpp",
+        "concepts": "cpp",
+        "iterator": "cpp",
+        "numbers": "cpp",
+        "semaphore": "cpp",
+        "stop_token": "cpp"
     },
     "python.analysis.extraPaths": [
         "/home/timur/mrs_workspace/devel/lib/python3/dist-packages",
