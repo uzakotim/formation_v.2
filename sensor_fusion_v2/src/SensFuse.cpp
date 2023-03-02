@@ -99,7 +99,6 @@ private:
   std::string _uav_name_;
   std::string _uav_name_1_;
   std::string _uav_name_2_;
-  double additional_delay_;
   // | --------------------- MRS transformer -------------------- |
 
   std::unique_ptr<mrs_lib::Transformer> transformer_;
@@ -147,7 +146,8 @@ private:
   cv::Point3f center3D_2;
   cv::Point3f center3D_3;
   cv::Mat goal_pose;
-  double max_radius {4.0};
+  double max_radius {3.0};
+  double radius_threshold;
   
   double offset_x;
   double offset_y;
@@ -225,9 +225,9 @@ void SensFuse::onInit() {
   param_loader.loadParam("world_point/x", world_point_x_);
   param_loader.loadParam("world_point/y", world_point_y_);
   param_loader.loadParam("world_point/z", world_point_z_);
+  param_loader.loadParam("formation_circle/radius_threshold", radius_threshold);
   // param_loader.loadParam("offset_angle/"+_uav_name_, offset_angle_);
   param_loader.loadParam("OFFSET_ANGLE", offset_angle_);
-  param_loader.loadParam("ADDITIONAL_DELAY", additional_delay_);
 
   if (!param_loader.loadedSuccessfully()) {
     ROS_ERROR("[WaypointFlier]: failed to load non-optional parameters!");
@@ -374,8 +374,8 @@ void SensFuse::callbackROBOT(const mrs_msgs::PoseWithCovarianceArrayStampedConst
         if (all_radius.size()>0)
         {
           max_radius = all_radius.top();
-          if (max_radius<4.0){
-                max_radius = 4.0;
+          if (max_radius<radius_threshold){
+                max_radius = radius_threshold;
           }else
           {
             max_radius = 0.5*all_radius.top();
