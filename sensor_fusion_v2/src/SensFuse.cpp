@@ -61,6 +61,9 @@
 #include <mrs_msgs/PoseWithCovarianceArrayStamped.h>
 #include <mrs_msgs/PoseWithCovarianceIdentified.h>
 
+#include <std_msgs/Int8.h>
+
+
 //}
 
 namespace sensor_fusion_v2
@@ -84,14 +87,17 @@ public:
   std::mutex mutex_counters_sens_fuse_two;           // to prevent data races when accessing the following variables from multiple threads
   std::mutex mutex_counters_sens_fuse_three;           // to prevent data races when accessing the following variables from multiple threads
   std::mutex mutex_centroids;           // to prevent data races when accessing the following variables from multiple threads
+  std::mutex mutex_odom_1;
   std::mutex mutex_radiuses;           // to prevent data races when accessing the following variables from multiple threads
   std::deque<cv::Point3f> centroids;
   std::priority_queue<double> all_radius;
+  std::mutex mutex_counters_opti_odom;           // to prevent data races when accessing the following variables from multiple threads
   
 
 private:
   /* flags */
   std::atomic<bool> is_initialized_ = false;
+  std::atomic<bool> got_odometry_1  = false;  // indicates whether at least one image message was received
 
   /* ros parameters */
   bool _gui_ = false;
@@ -111,16 +117,24 @@ private:
   // message_filters::Subscriber<mrs_msgs::PoseWithCovarianceArrayStamped> sub_points_own_;
   // message_filters::Subscriber<mrs_msgs::PoseWithCovarianceArrayStamped> sub_points_neigh1_;
   // message_filters::Subscriber<mrs_msgs::PoseWithCovarianceArrayStamped> sub_points_neigh2_;
+  ros::Subscriber sub_odom_own_;
 
   ros::Subscriber sub_points_own_;
   ros::Subscriber sub_points_neigh1_;
   ros::Subscriber sub_points_neigh2_;
+  
+  ros::Subscriber sub_angle_1_;
+  ros::Subscriber sub_angle_2_;
   // typedef message_filters::sync_policies::ApproximateTime<mrs_msgs::PoseWithCovarianceArrayStamped,mrs_msgs::PoseWithCovarianceArrayStamped,mrs_msgs::PoseWithCovarianceArrayStamped> MySyncPolicy;
   // typedef message_filters::Synchronizer<MySyncPolicy> Sync;
   // boost::shared_ptr<Sync> sync_;
+  void callbackODOM(const nav_msgs::OdometryConstPtr& odom);
   void callbackROBOT(const mrs_msgs::PoseWithCovarianceArrayStampedConstPtr& points_own);
   void callbackNEIGH1(const mrs_msgs::PoseWithCovarianceArrayStampedConstPtr& points_own);
   void callbackNEIGH2(const mrs_msgs::PoseWithCovarianceArrayStampedConstPtr& points_own);
+  
+  void  callbackANGLE1(const std_msgs::Int8ConstPtr& msg);
+  void  callbackANGLE2(const std_msgs::Int8ConstPtr& msg);
   // | --------------------- timer callbacks -------------------- |
 
   void       callbackTimerCheckSubscribers(const ros::TimerEvent& te);
@@ -153,6 +167,8 @@ private:
   double offset_y;
   double offset_z;
   double offset_angle_;
+  const std::vector<double> offset_angles {0.0,2.0944,-2.0944};
+  double own_x{-10000000000.0},own_y{-10000000000.0};
 
   // | ------------- variables for point projection ------------- |
   std::string                                 world_frame_id_;
@@ -183,8 +199,8 @@ private:
   double w_q = 0.1;
   double w_r = 5.0;
   
-  // double w_q = 1.0;
-  // double w_r = 50.0;
+  int neigh1_angle {-1};
+  int neigh2_angle {-1};
   // | --------------------- other functions -------------------- |
   void publishImageNumber(uint64_t count);
   double getAverage(std::vector<double> v);
@@ -251,11 +267,15 @@ void SensFuse::onInit() {
   ROS_INFO_STREAM("/"+_uav_name_2_+"/blob_det_v2/points");
   ROS_INFO_STREAM("points_own_in");
   
-  
+
+  sub_odom_own_ = nh.subscribe("odometry_own_in", 1,  &SensFuse::callbackODOM,this);
   sub_points_own_ = nh.subscribe("points_own_in", 1,  &SensFuse::callbackROBOT,this);
   sub_points_neigh1_ = nh.subscribe("points_neigh1_in", 1,  &SensFuse::callbackNEIGH1,this);
   sub_points_neigh2_ = nh.subscribe("points_neigh2_in", 1,  &SensFuse::callbackNEIGH2,this);
   
+  sub_angle_1_ = nh.subscribe("angle_in_1", 1,  &SensFuse::callbackANGLE1,this);
+  sub_angle_2_ = nh.subscribe("angle_in_2", 1,  &SensFuse::callbackANGLE2,this);
+
   ROS_INFO_STREAM("subs ok");
   
   // | ------------------ initialize publishers ----------------- |
@@ -295,6 +315,48 @@ void SensFuse::onInit() {
 
 
 // | ---------------------- msg callbacks --------------------- |
+/* callback Own Odometry */
+
+void SensFuse::callbackODOM(const nav_msgs::OdometryConstPtr& odom_own){
+
+  if (!is_initialized_) {
+    return;
+  }
+  // ROS_INFO("Slept for %lf secs", dt);
+  /* update the checks-related variables (in a thread-safe manner) */
+  {
+    std::scoped_lock lock(mutex_counters_opti_odom);
+    got_odometry_1          = true;  // indicates whether at least one image message was received
+    msg_counter_++;
+  }
+  mutex_odom_1.lock();
+  own_x = (double)(odom_own->pose.pose.position.x);
+  own_y = (double)(odom_own->pose.pose.position.y);
+  mutex_odom_1.unlock();
+  // ROS_INFO_STREAM("[own position] x: "<<own_x<<" y: "<<own_y);
+  //---------------------------------------------------------------
+  // ROS_INFO_THROTTLE(1, "[Optimiser]: Total of %u messages synchronised so far", (unsigned int)msg_counter_);
+}
+
+/* callbackANGLE1 */
+
+
+void SensFuse::callbackANGLE1(const std_msgs::Int8ConstPtr& msg)
+{
+  if (!is_initialized_) {
+    return;
+  }
+  neigh1_angle = msg->data;
+}
+
+void SensFuse::callbackANGLE2(const std_msgs::Int8ConstPtr& msg)
+{
+  if (!is_initialized_) {
+    return;
+  }
+  neigh2_angle = msg->data;
+}
+
 
 /* callbackImage() method //{ */
 
@@ -592,6 +654,23 @@ void SensFuse::callbackTimerPublishGoal([[maybe_unused]] const ros::TimerEvent& 
     avg_z = total_z/(double)centroids.size();
     ROS_INFO_STREAM("[current centroid] " <<avg_x<<" "<<avg_y<<" "<<avg_z);
     // formation
+    //offset should be selected as closest
+    double min = 1000000000;
+    for (int i = 0; i < 3; i++)
+    {
+      if ((i != neigh1_angle) && (i!= neigh2_angle))
+      {
+        offset_x = max_radius*std::cos(offset_angles[i]);
+        offset_y = max_radius*std::sin(offset_angles[i]);
+        double distance =std::sqrt(std::pow(own_x-avg_x-offset_x,2)+std::pow(own_y-avg_y-offset_y,2));
+        if (distance <= min)
+        {
+          min = distance;
+          offset_angle_ = offset_angles[i];
+        }
+      }
+    }
+
     offset_x = max_radius*std::cos(offset_angle_);
     offset_y = max_radius*std::sin(offset_angle_);
     offset_z = 5.0;
