@@ -250,24 +250,12 @@ void SensFuse::onInit() {
   ROS_INFO_STREAM("/"+_uav_name_1_+"/blob_det_v2/points");
   ROS_INFO_STREAM("/"+_uav_name_2_+"/blob_det_v2/points");
   ROS_INFO_STREAM("points_own_in");
-  // message_filters::Subscriber<mrs_msgs::PoseWithCovarianceArrayStamped> sub_points_own_(nh, "/"+_uav_name_+"/blob_det_v2/points", 1);
-  // message_filters::Subscriber<mrs_msgs::PoseWithCovarianceArrayStamped> sub_points_neigh1_(nh, "/"+_uav_name_1_+"/blob_det_v2/points", 1);
-  // message_filters::Subscriber<mrs_msgs::PoseWithCovarianceArrayStamped> sub_points_neigh2_(nh, "/"+_uav_name_2_+"/blob_det_v2/points", 1);
-  // message_filters::Subscriber<mrs_msgs::PoseWithCovarianceArrayStamped> sub_points_own_(nh, "points_own_in", 1);
-  // message_filters::Subscriber<mrs_msgs::PoseWithCovarianceArrayStamped> sub_points_neigh1_(nh, "points_neigh1_in", 1);
-  // message_filters::Subscriber<mrs_msgs::PoseWithCovarianceArrayStamped> sub_points_neigh2_(nh, "points_neigh2_in", 1);
   
   
   sub_points_own_ = nh.subscribe("points_own_in", 1,  &SensFuse::callbackROBOT,this);
   sub_points_neigh1_ = nh.subscribe("points_neigh1_in", 1,  &SensFuse::callbackNEIGH1,this);
   sub_points_neigh2_ = nh.subscribe("points_neigh2_in", 1,  &SensFuse::callbackNEIGH2,this);
   
-  // sub_points_own_.registerCallback(&SensFuse::callbackROBOT,this);
-  // sub_points_neigh1_.registerCallback(&SensFuse::callbackNEIGH1,this);
-  // sub_points_neigh2_.registerCallback(&SensFuse::callbackNEIGH2,this);
-  
-  // sync_.reset(new Sync(MySyncPolicy(10), sub_points_own_, sub_points_neigh1_,sub_points_neigh2_));
-  // sync_->registerCallback(boost::bind(&SensFuse::callbackROBOT, this, _1, _2,_3));
   ROS_INFO_STREAM("subs ok");
   
   // | ------------------ initialize publishers ----------------- |
@@ -337,16 +325,13 @@ void SensFuse::callbackROBOT(const mrs_msgs::PoseWithCovarianceArrayStampedConst
   
   if (points_own->poses.size() > 0)
   {
-    for (mrs_msgs::PoseWithCovarianceIdentified point : points_own->poses)
-    {
-        all_x.push_back(point.pose.position.x);
-        all_y.push_back(point.pose.position.y);
-        all_z.push_back(point.pose.position.z);
-    }
-  }
+      for (mrs_msgs::PoseWithCovarianceIdentified point : points_own->poses)
+      {
+          all_x.push_back(point.pose.position.x);
+          all_y.push_back(point.pose.position.y);
+          all_z.push_back(point.pose.position.z);
+      }
   //------------MEASUREMENTS------------------------    
-  if (all_x.size() !=0 )
-  {
       center3D_1.x = SensFuse::getAverage(all_x);
       center3D_1.y = SensFuse::getAverage(all_y);
       center3D_1.z = SensFuse::getAverage(all_z);
@@ -378,26 +363,26 @@ void SensFuse::callbackROBOT(const mrs_msgs::PoseWithCovarianceArrayStampedConst
           }
         }
       }
-  }
 
-  {
-    mutex_centroids.lock();
-    centroids.push_back(center3D_1);
-    if (centroids.size()>10)
-    {
-        centroids.pop_front();
-    }
-    if (all_radius.size()>0)
-    {
-      max_radius = all_radius.top();
-      if (max_radius<4.0){
-            max_radius = 4.0;
-      }else
       {
-        max_radius = 0.5*all_radius.top();
+        mutex_centroids.lock();
+        centroids.push_back(center3D_1);
+        if (centroids.size()>10)
+        {
+            centroids.pop_front();
+        }
+        if (all_radius.size()>0)
+        {
+          max_radius = all_radius.top();
+          if (max_radius<4.0){
+                max_radius = 4.0;
+          }else
+          {
+            max_radius = 0.5*all_radius.top();
+          }
+        }
+        mutex_centroids.unlock();
       }
-    }
-    mutex_centroids.unlock();
   }
   ros::Duration(0.01).sleep();
 }
@@ -431,16 +416,12 @@ void SensFuse::callbackNEIGH1(const mrs_msgs::PoseWithCovarianceArrayStampedCons
   
   if (points_own->poses.size() > 0)
   {
-    for (mrs_msgs::PoseWithCovarianceIdentified point : points_own->poses)
-    {
-        all_x.push_back(point.pose.position.x);
-        all_y.push_back(point.pose.position.y);
-        all_z.push_back(point.pose.position.z);
-    }
-  }
-  //------------MEASUREMENTS------------------------    
-  if (all_x.size() !=0 )
-  {
+      for (mrs_msgs::PoseWithCovarianceIdentified point : points_own->poses)
+      {
+          all_x.push_back(point.pose.position.x);
+          all_y.push_back(point.pose.position.y);
+          all_z.push_back(point.pose.position.z);
+      }
       center3D_2.x = SensFuse::getAverage(all_x);
       center3D_2.y = SensFuse::getAverage(all_y);
       center3D_2.z = SensFuse::getAverage(all_z);
@@ -472,26 +453,26 @@ void SensFuse::callbackNEIGH1(const mrs_msgs::PoseWithCovarianceArrayStampedCons
           }
         }
       }
-  }
 
-  {
-    mutex_centroids.lock();
-    centroids.push_back(center3D_2);
-    if (centroids.size()>10)
     {
-        centroids.pop_front();
-    }
-    if (all_radius.size()>0)
-    {
-      max_radius = all_radius.top();
-      if (max_radius<4.0){
-            max_radius = 4.0;
-      }else
+      mutex_centroids.lock();
+      centroids.push_back(center3D_2);
+      if (centroids.size()>10)
       {
-        max_radius = 0.5*all_radius.top();
+          centroids.pop_front();
       }
+      if (all_radius.size()>0)
+      {
+        max_radius = all_radius.top();
+        if (max_radius<4.0){
+              max_radius = 4.0;
+        }else
+        {
+          max_radius = 0.5*all_radius.top();
+        }
+      }
+      mutex_centroids.unlock();
     }
-    mutex_centroids.unlock();
   }
   ros::Duration(0.01).sleep();
 }
@@ -525,16 +506,13 @@ void SensFuse::callbackNEIGH2(const mrs_msgs::PoseWithCovarianceArrayStampedCons
   
   if (points_own->poses.size() > 0)
   {
-    for (mrs_msgs::PoseWithCovarianceIdentified point : points_own->poses)
-    {
-        all_x.push_back(point.pose.position.x);
-        all_y.push_back(point.pose.position.y);
-        all_z.push_back(point.pose.position.z);
-    }
-  }
+      for (mrs_msgs::PoseWithCovarianceIdentified point : points_own->poses)
+      {
+          all_x.push_back(point.pose.position.x);
+          all_y.push_back(point.pose.position.y);
+          all_z.push_back(point.pose.position.z);
+      }
   //------------MEASUREMENTS------------------------    
-  if (all_x.size() !=0 )
-  {
       center3D_3.x = SensFuse::getAverage(all_x);
       center3D_3.y = SensFuse::getAverage(all_y);
       center3D_3.z = SensFuse::getAverage(all_z);
@@ -566,26 +544,25 @@ void SensFuse::callbackNEIGH2(const mrs_msgs::PoseWithCovarianceArrayStampedCons
           }
         }
       }
-  }
-
-  {
-    mutex_centroids.lock();
-    centroids.push_back(center3D_3);
-    if (centroids.size()>10)
-    {
-        centroids.pop_front();
-    }
-    if (all_radius.size()>0)
-    {
-      max_radius = all_radius.top();
-      if (max_radius<4.0){
-            max_radius = 4.0;
-      }else
       {
-        max_radius = 0.5*all_radius.top();
+        mutex_centroids.lock();
+        centroids.push_back(center3D_3);
+        if (centroids.size()>10)
+        {
+            centroids.pop_front();
+        }
+        if (all_radius.size()>0)
+        {
+          max_radius = all_radius.top();
+          if (max_radius<4.0){
+                max_radius = 4.0;
+          }else
+          {
+            max_radius = 0.5*all_radius.top();
+          }
+        }
+        mutex_centroids.unlock();
       }
-    }
-    mutex_centroids.unlock();
   }
   ros::Duration(0.01).sleep();
 }

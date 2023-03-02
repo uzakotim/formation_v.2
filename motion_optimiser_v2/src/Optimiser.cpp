@@ -79,13 +79,15 @@ public:
   ros::ServiceClient client;
   mrs_msgs::ReferenceStampedSrv srv;
   std::mutex mutex_counters_opti;           // to prevent data races when accessing the following variables from multiple threads
+  std::mutex mutex_publisher;           // to prevent data races when accessing the following variables from multiple threads
+  /* flags */
+  std::atomic<bool> allow_motion_   = false;
+  std::atomic<bool> select_mode_    = false;
+  std::atomic<bool> record_centroid_= false;
 
 private:
   /* flags */
   std::atomic<bool> is_initialized_ = false;
-  std::atomic<bool> allow_motion_   = false;
-  std::atomic<bool> select_mode_    = false;
-  std::atomic<bool> record_centroid_= false;
 
   const double max_radius {4.0};
   double offset_angle_;
@@ -106,35 +108,49 @@ private:
   // | ---------------------- msg callbacks --------------------- |
 
   // void callbackImage(const sensor_msgs::ImageConstPtr& msg);
-  void  callbackROBOT(const nav_msgs::OdometryConstPtr& odom_own, const nav_msgs::OdometryConstPtr& odom_neigh1, const nav_msgs::OdometryConstPtr& odom_neigh2, const geometry_msgs::PoseWithCovarianceStampedConstPtr& goal_msg);
+  void  callbackROBOT(const nav_msgs::OdometryConstPtr& odom);
+  void  callbackODOM1(const nav_msgs::OdometryConstPtr& odom);
+  void  callbackODOM2(const nav_msgs::OdometryConstPtr& odom);
+  void  callbackGOAL(const geometry_msgs::PoseWithCovarianceStampedConstPtr& goal_msg);
 
  // | -------------- msg synchronization ------------------------|
-  message_filters::Subscriber<nav_msgs::Odometry> sub_odom_own_;
-  message_filters::Subscriber<nav_msgs::Odometry> sub_odom_neigh1_;
-  message_filters::Subscriber<nav_msgs::Odometry> sub_odom_neigh2_;
-  message_filters::Subscriber<mrs_msgs::EstimatedState> sub_heading_;
-  message_filters::Subscriber<geometry_msgs::PoseWithCovarianceStamped> sub_goal_;
+  // message_filters::Subscriber<nav_msgs::Odometry> sub_odom_own_;
+  // message_filters::Subscriber<nav_msgs::Odometry> sub_odom_neigh1_;
+  // message_filters::Subscriber<nav_msgs::Odometry> sub_odom_neigh2_;
+  // message_filters::Subscriber<mrs_msgs::EstimatedState> sub_heading_;
+  // message_filters::Subscriber<geometry_msgs::PoseWithCovarianceStamped> sub_goal_;
+  ros::Subscriber sub_odom_own_;
+  ros::Subscriber sub_odom_neigh1_;
+  ros::Subscriber sub_odom_neigh2_;
+  // ros::Subscriber sub_heading_;
+  ros::Subscriber sub_goal_;
 
-  typedef message_filters::sync_policies::ApproximateTime<nav_msgs::Odometry,nav_msgs::Odometry,nav_msgs::Odometry,geometry_msgs::PoseWithCovarianceStamped> MySyncPolicy;
-  typedef message_filters::Synchronizer<MySyncPolicy> Sync;
-  boost::shared_ptr<Sync> sync_;
+  // typedef message_filters::sync_policies::ApproximateTime<nav_msgs::Odometry,nav_msgs::Odometry,nav_msgs::Odometry,geometry_msgs::PoseWithCovarianceStamped> MySyncPolicy;
+  // typedef message_filters::Synchronizer<MySyncPolicy> Sync;
+  // boost::shared_ptr<Sync> sync_;
   
   // | --------------------- timer callbacks -------------------- |
 
   void       callbackTimerCheckSubscribers(const ros::TimerEvent& te);
+  void       callbackTimerPublishGoal(const ros::TimerEvent& te);
   ros::Timer timer_check_subscribers_;
+  ros::Timer timer_publish_goal_;
   int        _rate_timer_check_subscribers_;
+
 
   // | --------- variables, related to message checking --------- |
 
-  ros::Time  time_last_image_;          // time stamp of the last received image message
-  ros::Time  time_last_camera_info_;    // time stamp of the last received camera info message
+  ros::Time  time_last_one;          // time stamp of the last received image message
+  ros::Time  time_last_two;          // time stamp of the last received image message
+  ros::Time  time_last_three;          // time stamp of the last received image message
+  ros::Time  time_last_goal;          // time stamp of the last received image message
+  ros::Time  time_last_pub;          // time stamp of the last received image message
+  
   uint64_t   msg_counter_   = 0;      // counts the number of images received
-  bool       got_odometry_own_          = false;  // indicates whether at least one image message was received
-  // | --------------- variables for edge detector -------------- |
-
-  int       low_threshold_;
-  int const max_low_threshold_ = 100;
+  bool       got_odometry_1          = false;  // indicates whether at least one image message was received
+  bool       got_odometry_2          = false;  // indicates whether at least one image message was received
+  bool       got_odometry_3          = false;  // indicates whether at least one image message was received
+  bool       got_goal                = false;  // indicates whether at least one image message was received
 
   // | ------------- variables for point projection ------------- |
   std::string                                 world_frame_id_;
@@ -148,8 +164,6 @@ private:
 
   ros::Publisher             pub_test_;
   ros::Publisher             pub_points_;
-  image_transport::Publisher pub_edges_;
-  image_transport::Publisher pub_projection_;
   int                        _rate_timer_publish_;
 
   // ------------------------------------------------------------|
@@ -184,6 +198,10 @@ private:
   double searching_circle_center_x;
   double searching_circle_center_y;
   double z_height {4.0}; // set height of formation
+  // | --------------------- coordinates ------------------------ |
+  
+  double own_x{-10000000000.0},own_y{-10000000000.0}, neigh1_x{-10000000000.0}, neigh1_y{-10000000000.0}, neigh2_x{-10000000000.0},neigh2_y{-10000000000.0},goal_x{-10000000000.0},goal_y{-10000000000.0},goal_z{-10000000000.0};
+
   // | --------------------- other functions -------------------- |
   void publishImageNumber(uint64_t count);
   std::vector<double> calculateFormation( cv::Mat state,cv::Mat state_neigh1,cv::Mat state_neigh2,cv::Mat goal);
@@ -206,8 +224,10 @@ void Optimiser::onInit() {
   // | ---------------- set my booleans to false ---------------- |
   // but remember, always set them to their default value in the header file
   // because, when you add new one later, you might forger to come back here
-  got_odometry_own_          = false;  // indicates whether at least one image message was received
-
+  got_odometry_1          = false;  // indicates whether at least one image message was received
+  got_odometry_2          = false;  // indicates whether at least one image message was received
+  got_odometry_3          = false;  // indicates whether at least one image message was received
+  got_goal                = false;  // indicates whether at least one image message was received
 
   /* obtain node handle */
   ros::NodeHandle nh = nodelet::Nodelet::getMTPrivateNodeHandle();
@@ -223,7 +243,6 @@ void Optimiser::onInit() {
   param_loader.loadParam("gui", _gui_);
   param_loader.loadParam("rate/publish", _rate_timer_publish_);
   param_loader.loadParam("rate/check_subscribers", _rate_timer_check_subscribers_);
-  param_loader.loadParam("canny_threshold", low_threshold_);
   param_loader.loadParam("world_frame_id", world_frame_id_);
   param_loader.loadParam("world_point/x", world_point_x_);
   param_loader.loadParam("world_point/y", world_point_y_);
@@ -249,14 +268,23 @@ void Optimiser::onInit() {
   tf_listener_ptr_ = std::make_unique<tf2_ros::TransformListener>(tf_buffer_);
   ROS_INFO_STREAM("tf_listener ok");
   // | ----------------- initialize subscribers ----------------- |
-  sub_odom_own_.subscribe(nh,"odometry_own_in",100);
-  sub_odom_neigh1_.subscribe(nh,"odometry_neigh1_in",100);
-  sub_odom_neigh2_.subscribe(nh,"odometry_neigh2_in",100);
-  sub_heading_.subscribe(nh,"heading_in",100); 
-  sub_goal_.subscribe(nh,"goal_in",100); 
+
+  sub_odom_own_ = nh.subscribe("odometry_own_in", 1,  &Optimiser::callbackROBOT,this);
+  sub_odom_neigh1_ = nh.subscribe("odometry_neigh1_in", 1,  &Optimiser::callbackODOM1,this);
+  sub_odom_neigh2_ = nh.subscribe("odometry_neigh2_in", 1,  &Optimiser::callbackODOM2,this);
+  sub_goal_ = nh.subscribe("goal_in", 1,  &Optimiser::callbackGOAL,this);
+
+
+
+  // sub_odom_own_.subscribe(nh,"odometry_own_in",100);
+  // sub_odom_neigh1_.subscribe(nh,"odometry_neigh1_in",100);
+  // sub_odom_neigh2_.subscribe(nh,"odometry_neigh2_in",100);
+  // sub_heading_.subscribe(nh,"heading_in",100); 
+  // sub_goal_.subscribe(nh,"goal_in",100); 
   
-  sync_.reset(new Sync(MySyncPolicy(10), sub_odom_own_, sub_odom_neigh1_, sub_odom_neigh2_, sub_goal_));
-  sync_->registerCallback(boost::bind(&Optimiser::callbackROBOT, this, _1,_2,_3,_4));
+  // sync_.reset(new Sync(MySyncPolicy(10), sub_odom_own_, sub_odom_neigh1_, sub_odom_neigh2_, sub_goal_));
+  // sync_->registerCallback(boost::bind(&Optimiser::callbackROBOT, this, _1,_2,_3,_4));
+  
   ROS_INFO_STREAM("subs ok");
   // | ----------------- service motion publisher ----------------- |
   client = nh.serviceClient<mrs_msgs::ReferenceStampedSrv>("/"+_uav_name_+"/control_manager/reference");
@@ -267,7 +295,8 @@ void Optimiser::onInit() {
   pub_test_       = nh.advertise<std_msgs::UInt64>("test_publisher", 1);
   ROS_INFO_STREAM("pubs ok");
   // | -------------------- initialize timers ------------------- |
-  timer_check_subscribers_ = nh.createTimer(ros::Rate(_rate_timer_check_subscribers_), &Optimiser::callbackTimerCheckSubscribers, this);
+  timer_check_subscribers_  = nh.createTimer(ros::Rate(_rate_timer_check_subscribers_), &Optimiser::callbackTimerCheckSubscribers, this);
+  timer_publish_goal_       = nh.createTimer(ros::Rate(_rate_timer_publish_), &Optimiser::callbackTimerPublishGoal, this);
   // | -----------------------trigger    ------------------------ |
   std::string trigger_motion = "/" +_uav_name_ +"/trigger_motion";
   std::string trigger_mode = "/" +_uav_name_ +"/trigger_mode";
@@ -275,6 +304,7 @@ void Optimiser::onInit() {
   service_motion_ = nh.advertiseService(trigger_motion, &Optimiser::callback_trigger_motion,this);
   service_mode_   = nh.advertiseService(trigger_mode, &Optimiser::callback_trigger_mode,this);
   service_rec_   = nh.advertiseService(trigger_rec, &Optimiser::callback_trigger_rec,this);
+  ROS_INFO_STREAM("commander service ok");
   // ------------------------------------------------------------|
 
   offset_x = max_radius*std::cos(offset_angle_);
@@ -282,52 +312,174 @@ void Optimiser::onInit() {
   // ------------------------------------------------------------|
   searching_circle_center_x = 0.0;
   searching_circle_center_y = 0.0;
-  ROS_INFO_ONCE("[Optimiser]: initialized");
 
   is_initialized_ = true;
+  ROS_INFO_ONCE("[Optimiser]: initialized");
 }
 
 //}
 
 // | ---------------------- msg callbacks --------------------- |
 
-/* callbackImage() method //{ */
+/* callbackROBOT() method //{ */
 
-void Optimiser::callbackROBOT(const nav_msgs::OdometryConstPtr& odom_own, const nav_msgs::OdometryConstPtr& odom_neigh1, const nav_msgs::OdometryConstPtr& odom_neigh2, const geometry_msgs::PoseWithCovarianceStampedConstPtr& goal_msg){
+void Optimiser::callbackROBOT(const nav_msgs::OdometryConstPtr& odom_own){
 
   if (!is_initialized_) {
     return;
   }
-  ros::Time time_begin = ros::Time::now();
-  ros::Duration duration = time_begin-time_last_image_;
-  double dt = duration.toSec();
-  
   // ROS_INFO("Slept for %lf secs", dt);
-
- 
   /* update the checks-related variables (in a thread-safe manner) */
   {
     std::scoped_lock lock(mutex_counters_opti);
-    got_odometry_own_          = true;  // indicates whether at least one image message was received
+    got_odometry_1          = true;  // indicates whether at least one image message was received
     msg_counter_++;
-    time_last_image_ = ros::Time::now();
+    time_last_one = ros::Time::now();
+  }
+  own_x = (double)(odom_own->pose.pose.position.x);
+  own_y = (double)(odom_own->pose.pose.position.y);
+
+  // ROS_INFO_STREAM("[own position] x: "<<own_x<<" y: "<<own_y);
+  //---------------------------------------------------------------
+  // ROS_INFO_THROTTLE(1, "[Optimiser]: Total of %u messages synchronised so far", (unsigned int)msg_counter_);
+}
+
+//}
+
+/* callbackROBOT() method //{ */
+
+void Optimiser::callbackODOM1(const nav_msgs::OdometryConstPtr& odom_own){
+
+  if (!is_initialized_) {
+    return;
+  }
+  // ROS_INFO("Slept for %lf secs", dt);
+  /* update the checks-related variables (in a thread-safe manner) */
+  {
+    std::scoped_lock lock(mutex_counters_opti);
+    got_odometry_2          = true;  // indicates whether at least one image message was received
+    msg_counter_++;
+    time_last_one = ros::Time::now();
+  }
+  neigh1_x = (double)(odom_own->pose.pose.position.x);
+  neigh2_y = (double)(odom_own->pose.pose.position.y);
+  
+  // ROS_INFO_STREAM("[neigh1 position] x: "<<neigh1_x<<" y: "<<neigh1_y);
+  //---------------------------------------------------------------
+  /* output a text about it */
+  // ROS_INFO_THROTTLE(1, "[Optimiser]: Total of %u messages synchronised so far", (unsigned int)msg_counter_);
+}
+
+//}
+
+
+/* callbackROBOT() method //{ */
+
+void Optimiser::callbackODOM2(const nav_msgs::OdometryConstPtr& odom_own){
+
+  if (!is_initialized_) {
+    return;
+  }
+  // ROS_INFO("Slept for %lf secs", dt);
+  /* update the checks-related variables (in a thread-safe manner) */
+  {
+    std::scoped_lock lock(mutex_counters_opti);
+    got_odometry_3          = true;  // indicates whether at least one image message was received
+    msg_counter_++;
+    time_last_one = ros::Time::now();
+  }
+  neigh2_x = (double)(odom_own->pose.pose.position.x);
+  neigh2_y = (double)(odom_own->pose.pose.position.y);
+  // ROS_INFO_STREAM("[neigh2 position] x: "<<neigh2_x<<" y: "<<neigh2_y);
+  //---------------------------------------------------------------
+  /* output a text about it */
+  // ROS_INFO_THROTTLE(1, "[Optimiser]: Total of %u messages synchronised so far", (unsigned int)msg_counter_);
+}
+
+//}
+
+
+/* callbackROBOT() method //{ */
+
+void Optimiser::callbackGOAL(const geometry_msgs::PoseWithCovarianceStampedConstPtr& goal_msg){
+
+  if (!is_initialized_) {
+    return;
+  }
+  // ROS_INFO("Slept for %lf secs", dt);
+  /* update the checks-related variables (in a thread-safe manner) */
+  {
+    std::scoped_lock lock(mutex_counters_opti);
+    got_goal      = true;  // indicates whether at least one image message was received
+    msg_counter_++;
+    time_last_one = ros::Time::now();
+  }
+  goal_x = (double)(goal_msg->pose.pose.position.x);
+  goal_y = (double)(goal_msg->pose.pose.position.y);
+  goal_z = (double)(goal_msg->pose.pose.position.z); 
+  // ROS_INFO_STREAM("[goal position] x: "<<goal_x<<" y: "<<goal_y);
+  //---------------------------------------------------------------
+  /* output a text about it */
+  // ROS_INFO_THROTTLE(1, "[Optimiser]: Total of %u messages synchronised so far", (unsigned int)msg_counter_);
+}
+
+//}
+
+// | --------------------- timer callbacks -------------------- |
+
+/* callbackTimerCheckSubscribers() method //{ */
+
+void Optimiser::callbackTimerCheckSubscribers([[maybe_unused]] const ros::TimerEvent& te) {
+
+  if (!is_initialized_) {
+    return;
   }
 
+  if (!got_odometry_1) {
+    ROS_WARN_THROTTLE(1.0, "Have not yet received an own odometry message");
+  }
+  if (!got_odometry_2) {
+    ROS_WARN_THROTTLE(1.0, "Have not yet received a neighbor1 odometry message");
+  }
+  if (!got_odometry_3) {
+    ROS_WARN_THROTTLE(1.0, "Have not yet received a neighbor2 odometry message");
+  }
+  if (!got_goal) {
+    ROS_WARN_THROTTLE(1.0, "Have not yet received a goal message");
+  }
 
-  double own_x = (double)(odom_own->pose.pose.position.x);
-  double own_y = (double)(odom_own->pose.pose.position.y);
+}
 
-  double neigh1_x = (double)(odom_neigh1->pose.pose.position.x);
-  double neigh1_y = (double)(odom_neigh1->pose.pose.position.y);
+void Optimiser::callbackTimerPublishGoal([[maybe_unused]] const ros::TimerEvent& te) {
 
-  double neigh2_x = (double)(odom_neigh2->pose.pose.position.x);
-  double neigh2_y = (double)(odom_neigh2->pose.pose.position.y);
-
-  double goal_x = (double)(goal_msg->pose.pose.position.x);
-  double goal_y = (double)(goal_msg->pose.pose.position.y);
-  double goal_z = (double)(goal_msg->pose.pose.position.z);
+  if (!is_initialized_) {
+    return;
+  }
+  if ((own_x == -10000000000.0) || (own_y == -10000000000.0))
+  {
+    return;
+  }
+  if ((neigh1_x == -10000000000.0) || (neigh1_y == -10000000000.0))
+  {
+    neigh1_x = own_x;
+    neigh1_y = own_y;
+  }
+  if ((neigh2_x == -10000000000.0) || (neigh2_y == -10000000000.0))
+  {
+    neigh2_x = own_x;
+    neigh2_y = own_y;
+  }
+  ros::Time time_begin_pub = ros::Time::now();
+  ros::Duration duration = time_begin_pub-time_last_pub;
+  double dt = duration.toSec();
   
-
+   /* update the checks-related variables (in a thread-safe manner) */
+  {
+    std::scoped_lock lock(mutex_publisher);
+    msg_counter_++;
+    time_last_pub = ros::Time::now();
+  }
+  
   if(record_centroid_)
   { 
     ROS_INFO("[recording centroid] ON");
@@ -338,18 +490,17 @@ void Optimiser::callbackROBOT(const nav_msgs::OdometryConstPtr& odom_own, const 
   {
     ROS_INFO("[recording centroid] OFF");
   }
+
+  std::vector<double> go_to {0,0};
+
+ 
   cv::Mat state = (cv::Mat_<double>(2,1) << own_x,  own_y);
   cv::Mat state_neigh1 = (cv::Mat_<double>(2,1) << neigh1_x,  neigh1_y);
   cv::Mat state_neigh2 = (cv::Mat_<double>(2,1) << neigh2_x, neigh2_y);
-  
-  ROS_INFO_STREAM("[own position] x: "<<own_x<<" y: "<<own_y);
-
-  std::vector<double> go_to {0,0};
-  
+  cv::Mat goal = (cv::Mat_<double>(2,1) << goal_x,goal_y);
 
   if (select_mode_) 
   {
-    cv::Mat goal = (cv::Mat_<double>(2,1) << goal_x,goal_y);
     ROS_INFO("[mode] form formation");
     if ((goal_x != -10000000000) || ((goal_y != -10000000000) || (goal_z != -10000000000))){
       ROS_INFO_STREAM("[goto] x: "<<go_to[0]<<" y: "<<go_to[1]);
@@ -403,36 +554,16 @@ void Optimiser::callbackROBOT(const nav_msgs::OdometryConstPtr& odom_own, const 
       ROS_INFO("[moving] OFF");
   }
   ROS_INFO("\n");
-  //---------------------------------------------------------------
-  /* output a text about it */
-  // ROS_INFO_THROTTLE(1, "[Optimiser]: Total of %u messages synchronised so far", (unsigned int)msg_counter_);
-
-  ros::Duration(0.1+additional_delay_).sleep();
+  
 }
-
 //}
-
-// | --------------------- timer callbacks -------------------- |
-
-/* callbackTimerCheckSubscribers() method //{ */
-
-void Optimiser::callbackTimerCheckSubscribers([[maybe_unused]] const ros::TimerEvent& te) {
-
-  if (!is_initialized_) {
-    return;
-  }
-
-  if (!got_odometry_own_) {
-    ROS_WARN_THROTTLE(1.0, "Not synchronised odometry and goal msgs since node launch.");
-  }
-}
-
-//}
+// | --------------------- triggers -------------------- |
 bool Optimiser::callback_trigger_motion(std_srvs::Trigger::Request  &req, std_srvs::Trigger::Response &res)
 {
     if (!is_initialized_) {
       return false;
     }
+    // ROS_INFO_STREAM("!recceved allow motion");
     allow_motion_ = !allow_motion_;
     return true;
 }
@@ -441,6 +572,7 @@ bool Optimiser::callback_trigger_mode(std_srvs::Trigger::Request  &req, std_srvs
     if (!is_initialized_) {
       return false;
     }
+    // ROS_INFO_STREAM("!recceved select mode");
     select_mode_ = !select_mode_;
     return true;
 }
@@ -449,6 +581,7 @@ bool Optimiser::callback_trigger_rec(std_srvs::Trigger::Request  &req, std_srvs:
     if (!is_initialized_) {
       return false;
     }
+    // ROS_INFO_STREAM("!recceved record centroid");
     record_centroid_ = !record_centroid_;
     return true;
 }
