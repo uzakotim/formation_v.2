@@ -41,8 +41,8 @@ input=(
 '
   'Nimbro' 'export UAV_NAME="uav$NUMBER1"; waitForRos; rosrun mrs_uav_general run_nimbro.py `pwd`/custom_configs/nimbro.yaml `pwd`/custom_configs/uav_names.yaml
 '
-  'RealSense' 'export UAV_NAME="uav$NUMBER1"; waitForRos; roslaunch realsense uav_down.launch
-'
+# 'RealSense' 'export UAV_NAME="uav$NUMBER1"; waitForRos; roslaunch realsense uav_down.launch
+# '
   'Sensors' 'export UAV_NAME="uav$NUMBER1"; waitForRos; roslaunch mrs_uav_general sensors.launch
 '
   'Status' 'export UAV_NAME="uav$NUMBER1"; waitForRos; roslaunch mrs_uav_status status.launch

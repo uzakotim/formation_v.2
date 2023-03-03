@@ -41,23 +41,21 @@ input=(
 '
 'Nimbro' 'waitForRos; rosrun mrs_uav_general run_nimbro.py `pwd`/custom_configs/nimbro.yaml `pwd`/custom_configs/uav_names.yaml
 '
-'RealSense' 'waitForRos; roslaunch realsense uav_down.launch
-'
-'Sensors' 'waitForRos; roslaunch mrs_uav_general sensors.launch
-'
-'Status' 'waitForRos; roslaunch mrs_uav_status status.launch
-'
-'Control' 'waitForRos; roslaunch mrs_uav_general core.launch config_constraint_manager:=./custom_configs/constraint_manager.yaml config_control_manager:=./custom_configs/control_manager.yaml config_mpc_tracker:=./custom_configs/mpc_tracker.yaml config_odometry:=./custom_configs/odometry.yaml config_uav_manager:=./custom_configs/uav_manager.yaml config_uav_names:=./custom_configs/uav_names.yaml config_landoff_tracker:=./custom_configs/landoff_tracker.yaml
-'
-'AutoStart' 'waitForRos; roslaunch mrs_uav_general automatic_start.launch custom_config:=./custom_configs/automatic_start.yaml
-'
+# 'Sensors' 'waitForRos; roslaunch mrs_uav_general sensors.launch
+# '
+# 'Status' 'waitForRos; roslaunch mrs_uav_status status.launch
+# '
+# 'Control' 'waitForRos; roslaunch mrs_uav_general core.launch config_constraint_manager:=./custom_configs/constraint_manager.yaml config_control_manager:=./custom_configs/control_manager.yaml config_mpc_tracker:=./custom_configs/mpc_tracker.yaml config_odometry:=./custom_configs/odometry.yaml config_uav_manager:=./custom_configs/uav_manager.yaml config_uav_names:=./custom_configs/uav_names.yaml config_landoff_tracker:=./custom_configs/landoff_tracker.yaml
+# '
+# 'AutoStart' 'waitForRos; roslaunch mrs_uav_general automatic_start.launch custom_config:=./custom_configs/automatic_start.yaml
+# '
 'slow_odom' 'waitForRos; rostopic echo /'"$UAV_NAME"'/odometry/slow_odom
 '
 'odom_diag' 'waitForRos; rostopic echo /'"$UAV_NAME"'/odometry/diagnostics
 '
 'mavros_diag' 'waitForRos; rostopic echo /'"$UAV_NAME"'/mavros_interface/diagnostics
 '
-   'kernel_log' 'tail -f /var/log/kern.log -n 100
+'kernel_log' 'tail -f /var/log/kern.log -n 100
 '
   'roscore' 'roscore
 '
