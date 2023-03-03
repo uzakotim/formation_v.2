@@ -62,6 +62,7 @@
 
 #include <std_srvs/Trigger.h>
 #include <std_msgs/Int8.h>
+#include <std_msgs/Float64.h>
 
 
 //}
@@ -123,6 +124,9 @@ private:
 
   void  callbackANGLE1(const std_msgs::Int8ConstPtr& msg);
   void  callbackANGLE2(const std_msgs::Int8ConstPtr& msg);
+  
+  void  callbackSearchAngle1(const std_msgs::Float64ConstPtr& msg);
+  void  callbackSearchAngle2(const std_msgs::Float64ConstPtr& msg);
  // | -------------- msg synchronization ------------------------|
   // message_filters::Subscriber<nav_msgs::Odometry> sub_odom_own_;
   // message_filters::Subscriber<nav_msgs::Odometry> sub_odom_neigh1_;
@@ -138,6 +142,8 @@ private:
   ros::Subscriber sub_angle_1_;
   ros::Subscriber sub_angle_2_;
 
+  ros::Subscriber sub_search_angle_1_;
+  ros::Subscriber sub_search_angle_2_;
   // typedef message_filters::sync_policies::ApproximateTime<nav_msgs::Odometry,nav_msgs::Odometry,nav_msgs::Odometry,geometry_msgs::PoseWithCovarianceStamped> MySyncPolicy;
   // typedef message_filters::Synchronizer<MySyncPolicy> Sync;
   // boost::shared_ptr<Sync> sync_;
@@ -178,6 +184,7 @@ private:
   ros::Publisher             pub_test_;
   ros::Publisher             pub_points_;
   ros::Publisher             pub_angle_;
+  ros::Publisher             pub_search_angle_;
   int                        _rate_timer_publish_;
 
   // ------------------------------------------------------------|
@@ -217,6 +224,10 @@ private:
   int neigh1_angle {-1};
   int neigh2_angle {-1};
   
+  // search circle parameters
+  _Float64 own_search_angle {0};
+  _Float64 neigh1_search_angle {0};
+  _Float64 neigh2_search_angle {0};
   // | --------------------- coordinates ------------------------ |
   
   double own_x{-10000000000.0},own_y{-10000000000.0}, neigh1_x{-10000000000.0}, neigh1_y{-10000000000.0}, neigh2_x{-10000000000.0},neigh2_y{-10000000000.0},goal_x{-10000000000.0},goal_y{-10000000000.0},goal_z{-10000000000.0};
@@ -297,6 +308,8 @@ void Optimiser::onInit() {
   sub_angle_1_ = nh.subscribe("angle_in_1", 1,  &Optimiser::callbackANGLE1,this);
   sub_angle_2_ = nh.subscribe("angle_in_2", 1,  &Optimiser::callbackANGLE2,this);
 
+  sub_search_angle_1_ = nh.subscribe("search_angle_in_1", 1,  &Optimiser::callbackSearchAngle1,this);
+  sub_search_angle_2_ = nh.subscribe("search_angle_in_2", 1,  &Optimiser::callbackSearchAngle2,this);
 
   // sub_odom_own_.subscribe(nh,"odometry_own_in",100);
   // sub_odom_neigh1_.subscribe(nh,"odometry_neigh1_in",100);
@@ -316,6 +329,7 @@ void Optimiser::onInit() {
   // | ------------------ initialize publishers ----------------- |
   pub_test_       = nh.advertise<std_msgs::UInt64>("test_publisher", 1);
   pub_angle_      = nh.advertise<std_msgs::Int8>("angle_out", 1);
+  pub_search_angle_      = nh.advertise<std_msgs::Float64>("search_angle_out", 1);
   ROS_INFO_STREAM("pubs ok");
   // | -------------------- initialize timers ------------------- |
   timer_check_subscribers_  = nh.createTimer(ros::Rate(_rate_timer_check_subscribers_), &Optimiser::callbackTimerCheckSubscribers, this);
@@ -369,6 +383,27 @@ void Optimiser::callbackROBOT(const nav_msgs::OdometryConstPtr& odom_own){
 }
 
 //}
+
+/* callbackSearchAngle */
+
+
+void Optimiser::callbackSearchAngle1(const std_msgs::Float64ConstPtr& msg)
+{
+  // angle that determines the common position on searching circle
+  if (!is_initialized_) {
+    return;
+  }
+  neigh1_search_angle = msg->data;
+}
+
+void Optimiser::callbackSearchAngle2(const std_msgs::Float64ConstPtr& msg)
+{
+  // angle that determines the common position on searching circle
+  if (!is_initialized_) {
+    return;
+  }
+  neigh2_search_angle = msg->data;
+}
 
 /* callbackANGLE1 */
 
@@ -518,15 +553,11 @@ void Optimiser::callbackTimerPublishGoal([[maybe_unused]] const ros::TimerEvent&
     neigh2_x = own_x;
     neigh2_y = own_y;
   }
-  ros::Time time_begin_pub = ros::Time::now();
-  ros::Duration duration = time_begin_pub-time_last_pub;
-  double dt = duration.toSec();
   
    /* update the checks-related variables (in a thread-safe manner) */
   {
     std::scoped_lock lock(mutex_publisher);
     msg_counter_++;
-    time_last_pub = ros::Time::now();
   }
   
   if(record_centroid_)
@@ -552,8 +583,8 @@ void Optimiser::callbackTimerPublishGoal([[maybe_unused]] const ros::TimerEvent&
   {
     ROS_INFO("[mode] form formation");
     if ((goal.at<double>(0) != -10000000000) || ((goal.at<double>(1) != -10000000000))){
-      ROS_INFO_STREAM("[goto] x: "<<go_to[0]<<" y: "<<go_to[1]);
       go_to = Optimiser::calculateFormation(state,state_neigh1,state_neigh2,goal);
+      ROS_INFO_STREAM("[goto] x: "<<go_to[0]<<" y: "<<go_to[1]);
     }
     else
     {
@@ -565,11 +596,14 @@ void Optimiser::callbackTimerPublishGoal([[maybe_unused]] const ros::TimerEvent&
   else 
   {
     ROS_INFO("[mode] search");
-    if (searching_circle_angle >= 2*M_PI)
+    // searching_circle_angle += omega*dt;
+    own_search_angle = (1.0/3.0)*(neigh1_search_angle + neigh1_search_angle + own_search_angle);
+    if (own_search_angle >= 2*M_PI)
     {
-      searching_circle_angle -= 2*M_PI; 
+      own_search_angle -= 2*M_PI; 
     }
-    searching_circle_angle += omega*dt;
+
+    searching_circle_angle = (double)own_search_angle;
     ROS_INFO_STREAM("[current angle] "<<searching_circle_angle);
     ROS_INFO_STREAM("[circle centroid] x: "<<searching_circle_center_x<<" y: "<<searching_circle_center_y);
     double avg_x = searching_circle_center_x + searching_circle_radius*cos(searching_circle_angle);
@@ -602,6 +636,10 @@ void Optimiser::callbackTimerPublishGoal([[maybe_unused]] const ros::TimerEvent&
     msg.data = own_angle;
     pub_angle_.publish(msg);
 
+    std_msgs::Float64 msg_angle;
+    msg_angle.data = own_search_angle + omega;
+    pub_search_angle_.publish(msg_angle);
+    
     offset_angle_ = offset_angles[own_angle];
 
     offset_x = max_radius*std::cos(offset_angle_);

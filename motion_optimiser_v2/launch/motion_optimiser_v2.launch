@@ -55,9 +55,13 @@
       <remap from="~goal_in" to="/$(arg UAV_NAME)/sensor_fusion_v2/goal" />
       <remap from="~angle_in_1" to="/$(arg NEIGH_NAME_1)/motion_optimiser_v2/angle" />
       <remap from="~angle_in_2" to="/$(arg NEIGH_NAME_2)/motion_optimiser_v2/angle" />
-      
+
+      <remap from="~search_angle_in_1" to="/$(arg NEIGH_NAME_1)/motion_optimiser_v2/search_angle" />
+      <remap from="~search_angle_in_2" to="/$(arg NEIGH_NAME_2)/motion_optimiser_v2/search_angle" />
       <!-- Publishers (note that the topic names will also be remapped using the namespace as a prefix) -->
       <remap from="~angle_out" to="/$(arg UAV_NAME)/motion_optimiser_v2/angle/" />
+      <remap from="~search_angle_out" to="/$(arg UAV_NAME)/motion_optimiser_v2/search_angle/" />
+      
       <remap from="~test_publisher" to="~image_number" />
 
     </node>
