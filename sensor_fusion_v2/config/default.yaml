@@ -11,6 +11,6 @@ formation_circle:
   radius_threshold: 3.0
 rate:
   # how often to publish my topic?
-  publish: 50 # [Hz]
+  publish: 25 # [Hz]
   # how often check whether msgs are arriving?
   check_subscribers: 1 # [Hz]
