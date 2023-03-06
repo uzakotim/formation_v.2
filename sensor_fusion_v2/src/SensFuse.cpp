@@ -98,7 +98,12 @@ private:
   /* flags */
   std::atomic<bool> is_initialized_ = false;
   std::atomic<bool> got_odometry_1  = false;  // indicates whether at least one image message was received
+  std::atomic<bool> got_points_1    = false;  // indicates whether at least one image message was received
+  std::atomic<bool> got_points_2    = false;  // indicates whether at least one image message was received
+  std::atomic<bool> got_points_3    = false;  // indicates whether at least one image message was received
 
+  std::atomic<bool> got_angle1      = false;  // indicates whether at least one image message was received
+  std::atomic<bool> got_angle2      = false;  // indicates whether at least one image message was received
   /* ros parameters */
   bool _gui_ = false;
 
@@ -150,9 +155,6 @@ private:
   ros::Time  time_last_image_three;          // time stamp of the last received image message
   ros::Time  time_last_camera_info_;    // time stamp of the last received camera info message
   uint64_t   msg_counter_   = 0;      // counts the number of images received
-  bool       got_points_1            = false;  // indicates whether at least one image message was received
-  bool       got_points_2            = false;  // indicates whether at least one image message was received
-  bool       got_points_3            = false;  // indicates whether at least one image message was received
 
   // | --------------- variables for center calculation -------------- |
 
@@ -221,6 +223,8 @@ void SensFuse::onInit() {
   got_points_1            = false;  // indicates whether at least one image message was received
   got_points_2            = false;  // indicates whether at least one image message was received
   got_points_3            = false;  // indicates whether at least one image message was received
+  got_angle1              = false;  // indicates whether at least one image message was received
+  got_angle2              = false;  // indicates whether at least one image message was received
   /* obtain node handle */
   ros::NodeHandle nh = nodelet::Nodelet::getMTPrivateNodeHandle();
   
@@ -344,6 +348,10 @@ void SensFuse::callbackANGLE1(const std_msgs::Int8ConstPtr& msg)
   if (!is_initialized_) {
     return;
   }
+  {
+    std::scoped_lock lock(mutex_counters_opti_odom);
+    got_angle1          = true;  // indicates whether at least one image message was received
+  }
   neigh1_angle = msg->data;
 }
 
@@ -351,6 +359,10 @@ void SensFuse::callbackANGLE2(const std_msgs::Int8ConstPtr& msg)
 {
   if (!is_initialized_) {
     return;
+  }
+  {
+    std::scoped_lock lock(mutex_counters_opti_odom);
+    got_angle2          = true;  // indicates whether at least one image message was received
   }
   neigh2_angle = msg->data;
 }
@@ -459,7 +471,7 @@ void SensFuse::callbackNEIGH1(const mrs_msgs::PoseWithCovarianceArrayStampedCons
   double dt = duration.toSec();
   
   ROS_INFO("[RECEIVED NEIGH1]");
-
+  ROS_INFO_STREAM("[dt] : "<<dt);
   /* update the checks-related variables (in a thread-safe manner) */
   {
     std::scoped_lock lock(mutex_counters_sens_fuse_two);
@@ -549,6 +561,7 @@ void SensFuse::callbackNEIGH2(const mrs_msgs::PoseWithCovarianceArrayStampedCons
   double dt = duration.toSec();
   
   ROS_INFO("[RECEIVED NEIGH2]");
+  ROS_INFO_STREAM("[dt] : "<<dt);
 
   /* update the checks-related variables (in a thread-safe manner) */
   {
@@ -710,6 +723,14 @@ void SensFuse::callbackTimerCheckSubscribers([[maybe_unused]] const ros::TimerEv
   if (!got_points_3) {
   
     ROS_WARN_THROTTLE(1, "Did not receive points msgs from neigh 2");
+  }
+  if (!got_angle1) {
+  
+    ROS_WARN_THROTTLE(1, "Did not receive formation angle msgs from neigh 1");
+  }
+  if (!got_angle2) {
+  
+    ROS_WARN_THROTTLE(1, "Did not receive formation angle msgs from neigh 2");
   }
 }
 //}

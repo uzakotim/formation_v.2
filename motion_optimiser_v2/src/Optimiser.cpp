@@ -95,6 +95,17 @@ public:
 private:
   /* flags */
   std::atomic<bool> is_initialized_ = false;
+  
+  std::atomic<bool> got_odometry_1              = false;  // indicates whether at least one image message was received
+  std::atomic<bool> got_odometry_2              = false;  // indicates whether at least one image message was received
+  std::atomic<bool> got_odometry_3              = false;  // indicates whether at least one image message was received
+  
+  std::atomic<bool> got_goal                    = false;  // indicates whether at least one image message was received
+  
+  std::atomic<bool> got_angle1                  = false;  // indicates whether at least one image message was received
+  std::atomic<bool> got_angle2                  = false;  // indicates whether at least one image message was received
+  std::atomic<bool> got_search_angle1           = false;  // indicates whether at least one image message was received
+  std::atomic<bool> got_search_angle2           = false;  // indicates whether at least one image message was received
 
   double max_radius;
   double offset_angle_;
@@ -166,10 +177,6 @@ private:
   ros::Time  time_last_pub;          // time stamp of the last received image message
   
   uint64_t   msg_counter_   = 0;      // counts the number of images received
-  bool       got_odometry_1          = false;  // indicates whether at least one image message was received
-  bool       got_odometry_2          = false;  // indicates whether at least one image message was received
-  bool       got_odometry_3          = false;  // indicates whether at least one image message was received
-  bool       got_goal                = false;  // indicates whether at least one image message was received
 
   // | ------------- variables for point projection ------------- |
   std::string                                 world_frame_id_;
@@ -258,6 +265,11 @@ void Optimiser::onInit() {
   got_odometry_2          = false;  // indicates whether at least one image message was received
   got_odometry_3          = false;  // indicates whether at least one image message was received
   got_goal                = false;  // indicates whether at least one image message was received
+
+  got_angle1              = false;  // indicates whether at least one image message was received
+  got_angle2              = false;  // indicates whether at least one image message was received
+  got_search_angle1       = false;  // indicates whether at least one image message was received
+  got_search_angle2       = false;  // indicates whether at least one image message was received
 
   /* obtain node handle */
   ros::NodeHandle nh = nodelet::Nodelet::getMTPrivateNodeHandle();
@@ -393,6 +405,11 @@ void Optimiser::callbackSearchAngle1(const std_msgs::Float64ConstPtr& msg)
   if (!is_initialized_) {
     return;
   }
+  
+  {
+    std::scoped_lock lock(mutex_counters_opti);
+    got_search_angle1          = true;  // indicates whether at least one image message was received
+  }
   neigh1_search_angle = msg->data;
 }
 
@@ -401,6 +418,10 @@ void Optimiser::callbackSearchAngle2(const std_msgs::Float64ConstPtr& msg)
   // angle that determines the common position on searching circle
   if (!is_initialized_) {
     return;
+  }
+  {
+    std::scoped_lock lock(mutex_counters_opti);
+    got_search_angle2          = true;  // indicates whether at least one image message was received
   }
   neigh2_search_angle = msg->data;
 }
@@ -413,6 +434,10 @@ void Optimiser::callbackANGLE1(const std_msgs::Int8ConstPtr& msg)
   if (!is_initialized_) {
     return;
   }
+  {
+    std::scoped_lock lock(mutex_counters_opti);
+    got_angle1          = true;  // indicates whether at least one image message was received
+  }
   neigh1_angle = msg->data;
 }
 
@@ -420,6 +445,10 @@ void Optimiser::callbackANGLE2(const std_msgs::Int8ConstPtr& msg)
 {
   if (!is_initialized_) {
     return;
+  }
+  {
+    std::scoped_lock lock(mutex_counters_opti);
+    got_angle2          = true;  // indicates whether at least one image message was received
   }
   neigh2_angle = msg->data;
 }
@@ -530,6 +559,18 @@ void Optimiser::callbackTimerCheckSubscribers([[maybe_unused]] const ros::TimerE
   if (!got_goal) {
     ROS_WARN_THROTTLE(1.0, "Have not yet received a goal message");
   }
+  if (!got_search_angle1) {
+    ROS_WARN_THROTTLE(1.0, "Have not yet received a search angle message from neigh1");
+  }
+  if (!got_search_angle2) {
+    ROS_WARN_THROTTLE(1.0, "Have not yet received a search angle message from neigh2");
+  }
+  if (!got_angle1) {
+    ROS_WARN_THROTTLE(1.0, "Have not yet received a formation angle message from neigh1");
+  }
+  if (!got_angle2) {
+    ROS_WARN_THROTTLE(1.0, "Have not yet received a formation angle message from neigh2");
+  }
 
 }
 
@@ -597,13 +638,31 @@ void Optimiser::callbackTimerPublishGoal([[maybe_unused]] const ros::TimerEvent&
   {
     ROS_INFO("[mode] search");
     // searching_circle_angle += omega*dt;
-    own_search_angle = (1.0/3.0)*(neigh1_search_angle + neigh1_search_angle + own_search_angle);
-    if (own_search_angle >= 2*M_PI)
+    if (own_search_angle >= 2.0*M_PI)
     {
-      own_search_angle -= 2*M_PI; 
+      own_search_angle -= 2.0*M_PI; 
     }
-
-    searching_circle_angle = (double)own_search_angle;
+    if (neigh1_search_angle >= 2.0*M_PI)
+    {
+      neigh1_search_angle -= 2.0*M_PI;
+    }
+    if (neigh2_search_angle >= 2.0*M_PI)
+    {
+      neigh2_search_angle -= 2.0*M_PI;
+    }
+    // if difference is greater than 5
+      // do not compute network
+      // compute own plus omega
+    // else
+      //  use network
+    if ((std::abs(own_search_angle - neigh1_search_angle) > 5.0) || (std::abs(own_search_angle - neigh2_search_angle) > 5.0))
+    {
+      searching_circle_angle = (double)own_search_angle;
+    }
+    else 
+    {
+      searching_circle_angle = (1.0/3.0)*(neigh1_search_angle + neigh2_search_angle + own_search_angle);
+    }
     ROS_INFO_STREAM("[current angle] "<<searching_circle_angle);
     ROS_INFO_STREAM("[circle centroid] x: "<<searching_circle_center_x<<" y: "<<searching_circle_center_y);
     double avg_x = searching_circle_center_x + searching_circle_radius*cos(searching_circle_angle);
@@ -632,13 +691,12 @@ void Optimiser::callbackTimerPublishGoal([[maybe_unused]] const ros::TimerEvent&
       }
     }
 
+    
+    
+
     std_msgs::Int8 msg;
     msg.data = own_angle;
     pub_angle_.publish(msg);
-
-    std_msgs::Float64 msg_angle;
-    msg_angle.data = own_search_angle + omega;
-    pub_search_angle_.publish(msg_angle);
     
     offset_angle_ = offset_angles[own_angle];
 
@@ -647,7 +705,18 @@ void Optimiser::callbackTimerPublishGoal([[maybe_unused]] const ros::TimerEvent&
     
     cv::Mat goal = (cv::Mat_<double>(2,1) << avg_x + offset_x,avg_y + offset_y);
     go_to = Optimiser::calculateFormation(state,state_neigh1,state_neigh2,goal);
+
+    own_search_angle += omega;
+    double angle_to_send = searching_circle_angle + omega;
+    if (angle_to_send >= 2.0*M_PI)
+    {
+      angle_to_send -= 2.0*M_PI; 
+    }
     
+    std_msgs::Float64 msg_angle;
+    msg_angle.data = static_cast<_Float64>(angle_to_send);
+    ROS_INFO_STREAM("[future angle] "<<msg_angle.data);
+    pub_search_angle_.publish(msg_angle);
   }
   ROS_INFO_STREAM("[own angle] "<<own_angle);
     // MRS - waypoint --------------------------------------
