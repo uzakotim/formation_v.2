@@ -655,14 +655,25 @@ void Optimiser::callbackTimerPublishGoal([[maybe_unused]] const ros::TimerEvent&
       // compute own plus omega
     // else
       //  use network
-    if ((std::abs(own_search_angle - neigh1_search_angle) > 5.0) || (std::abs(own_search_angle - neigh2_search_angle) > 5.0))
+    
+    if ((std::abs(own_search_angle - neigh1_search_angle) > 5.5) && (std::abs(own_search_angle - neigh2_search_angle) <= 5.5))
     {
-      searching_circle_angle = (double)own_search_angle;
+      searching_circle_angle = (1.0/2.0)*(neigh2_search_angle + own_search_angle);
+      // searching_circle_angle = (1.0/3.0)*(neigh1_search_angle + neigh2_search_angle + own_search_angle);
+    }else if ((std::abs(own_search_angle - neigh1_search_angle) <= 5.5) && (std::abs(own_search_angle - neigh2_search_angle) > 5.5))
+    {
+      searching_circle_angle = (1.0/2.0)*(neigh1_search_angle + own_search_angle);
+      // searching_circle_angle = (1.0/3.0)*(neigh1_search_angle + neigh2_search_angle + own_search_angle);
     }
-    else 
+    else if ((std::abs(own_search_angle - neigh1_search_angle) > 5.5)&& (std::abs(own_search_angle - neigh2_search_angle) > 5.5))
+    {
+      searching_circle_angle = own_search_angle;
+    }
+    else
     {
       searching_circle_angle = (1.0/3.0)*(neigh1_search_angle + neigh2_search_angle + own_search_angle);
     }
+
     ROS_INFO_STREAM("[current angle] "<<searching_circle_angle);
     ROS_INFO_STREAM("[circle centroid] x: "<<searching_circle_center_x<<" y: "<<searching_circle_center_y);
     double avg_x = searching_circle_center_x + searching_circle_radius*cos(searching_circle_angle);
