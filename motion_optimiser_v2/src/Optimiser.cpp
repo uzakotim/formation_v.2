@@ -389,10 +389,7 @@ void Optimiser::callbackSearchAngle1(const std_msgs::Float64ConstPtr& msg)
     return;
   }
   
-  {
-    std::scoped_lock lock(mutex_counters_opti);
-    got_search_angle1          = true;  // indicates whether at least one image message was received
-  }
+  got_search_angle1          = true;  // indicates whether at least one image message was received
   neigh1_search_angle = msg->data;
 }
 
@@ -402,10 +399,7 @@ void Optimiser::callbackSearchAngle2(const std_msgs::Float64ConstPtr& msg)
   if (!is_initialized_) {
     return;
   }
-  {
-    std::scoped_lock lock(mutex_counters_opti);
-    got_search_angle2          = true;  // indicates whether at least one image message was received
-  }
+  got_search_angle2          = true;  // indicates whether at least one image message was received
   neigh2_search_angle = msg->data;
 }
 
@@ -417,10 +411,7 @@ void Optimiser::callbackANGLE1(const std_msgs::Int8ConstPtr& msg)
   if (!is_initialized_) {
     return;
   }
-  {
-    std::scoped_lock lock(mutex_counters_opti);
-    got_angle1          = true;  // indicates whether at least one image message was received
-  }
+  got_angle1          = true;  // indicates whether at least one image message was received
   neigh1_angle = msg->data;
 }
 
@@ -429,10 +420,7 @@ void Optimiser::callbackANGLE2(const std_msgs::Int8ConstPtr& msg)
   if (!is_initialized_) {
     return;
   }
-  {
-    std::scoped_lock lock(mutex_counters_opti);
-    got_angle2          = true;  // indicates whether at least one image message was received
-  }
+  got_angle2          = true;  // indicates whether at least one image message was received
   neigh2_angle = msg->data;
 }
 
