@@ -1,0 +1,7 @@
+<library path="lib/libFakeOdometryNode">
+  <class name="fake_odometry/FakeOdometryNode" type="fake_odometry::FakeOdometryNode" base_class_type="nodelet::Nodelet">
+  <description>
+    This is my nodelet.
+  </description>
+  </class>
+</library>

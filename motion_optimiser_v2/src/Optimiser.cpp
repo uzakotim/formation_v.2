@@ -139,11 +139,6 @@ private:
   void  callbackSearchAngle1(const std_msgs::Float64ConstPtr& msg);
   void  callbackSearchAngle2(const std_msgs::Float64ConstPtr& msg);
  // | -------------- msg synchronization ------------------------|
-  // message_filters::Subscriber<nav_msgs::Odometry> sub_odom_own_;
-  // message_filters::Subscriber<nav_msgs::Odometry> sub_odom_neigh1_;
-  // message_filters::Subscriber<nav_msgs::Odometry> sub_odom_neigh2_;
-  // message_filters::Subscriber<mrs_msgs::EstimatedState> sub_heading_;
-  // message_filters::Subscriber<geometry_msgs::PoseWithCovarianceStamped> sub_goal_;
   ros::Subscriber sub_odom_own_;
   ros::Subscriber sub_odom_neigh1_;
   ros::Subscriber sub_odom_neigh2_;
@@ -155,9 +150,6 @@ private:
 
   ros::Subscriber sub_search_angle_1_;
   ros::Subscriber sub_search_angle_2_;
-  // typedef message_filters::sync_policies::ApproximateTime<nav_msgs::Odometry,nav_msgs::Odometry,nav_msgs::Odometry,geometry_msgs::PoseWithCovarianceStamped> MySyncPolicy;
-  // typedef message_filters::Synchronizer<MySyncPolicy> Sync;
-  // boost::shared_ptr<Sync> sync_;
   
   // | --------------------- timer callbacks -------------------- |
 
@@ -323,15 +315,6 @@ void Optimiser::onInit() {
   sub_search_angle_1_ = nh.subscribe("search_angle_in_1", 1,  &Optimiser::callbackSearchAngle1,this);
   sub_search_angle_2_ = nh.subscribe("search_angle_in_2", 1,  &Optimiser::callbackSearchAngle2,this);
 
-  // sub_odom_own_.subscribe(nh,"odometry_own_in",100);
-  // sub_odom_neigh1_.subscribe(nh,"odometry_neigh1_in",100);
-  // sub_odom_neigh2_.subscribe(nh,"odometry_neigh2_in",100);
-  // sub_heading_.subscribe(nh,"heading_in",100); 
-  // sub_goal_.subscribe(nh,"goal_in",100); 
-  
-  // sync_.reset(new Sync(MySyncPolicy(10), sub_odom_own_, sub_odom_neigh1_, sub_odom_neigh2_, sub_goal_));
-  // sync_->registerCallback(boost::bind(&Optimiser::callbackROBOT, this, _1,_2,_3,_4));
-  
   ROS_INFO_STREAM("subs ok");
   // | ----------------- service motion publisher ----------------- |
   client = nh.serviceClient<mrs_msgs::ReferenceStampedSrv>("/"+_uav_name_+"/control_manager/reference");
@@ -656,22 +639,22 @@ void Optimiser::callbackTimerPublishGoal([[maybe_unused]] const ros::TimerEvent&
     // else
       //  use network
     
-    if ((std::abs(own_search_angle - neigh1_search_angle) > 5.5) && (std::abs(own_search_angle - neigh2_search_angle) <= 5.5))
+    if ((std::abs(own_search_angle - neigh1_search_angle) > 4.0) && (std::abs(own_search_angle - neigh2_search_angle) <= 4.0))
     {
       searching_circle_angle = (1.0/2.0)*(neigh2_search_angle + own_search_angle);
       // searching_circle_angle = (1.0/3.0)*(neigh1_search_angle + neigh2_search_angle + own_search_angle);
-    }else if ((std::abs(own_search_angle - neigh1_search_angle) <= 5.5) && (std::abs(own_search_angle - neigh2_search_angle) > 5.5))
+    }else if ((std::abs(own_search_angle - neigh1_search_angle) <= 4.0) && (std::abs(own_search_angle - neigh2_search_angle) > 4.0))
     {
       searching_circle_angle = (1.0/2.0)*(neigh1_search_angle + own_search_angle);
       // searching_circle_angle = (1.0/3.0)*(neigh1_search_angle + neigh2_search_angle + own_search_angle);
     }
-    else if ((std::abs(own_search_angle - neigh1_search_angle) > 5.5)&& (std::abs(own_search_angle - neigh2_search_angle) > 5.5))
+    else if ((std::abs(own_search_angle - neigh1_search_angle) > 4.0)&& (std::abs(own_search_angle - neigh2_search_angle) > 4.0))
     {
       searching_circle_angle = own_search_angle;
     }
     else
     {
-      searching_circle_angle = (1.0/3.0)*(neigh1_search_angle + neigh2_search_angle + own_search_angle);
+          searching_circle_angle = (1.0/3.0)*(neigh1_search_angle + neigh2_search_angle + own_search_angle);
     }
 
     ROS_INFO_STREAM("[current angle] "<<searching_circle_angle);

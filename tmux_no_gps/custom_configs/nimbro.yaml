@@ -1,0 +1,66 @@
+topics: # topics published out of this machine to receivers specified above
+ - name: "control_manager/mpc_tracker/diagnostics"
+   compress: true # enable bz2 compression
+   rate: 1.0
+ - name: "control_manager/diagnostics"
+   compress: true # enable bz2 compression
+   rate: 1.0
+ - name: "uav_manager/diagnostics"
+   compress: true # enable bz2 compression
+   rate: 1.0
+ - name: "fake_odometry"
+   compress: true # enable bz2 compression
+   rate: 1.0
+ - name: "control_manager/mpc_tracker/predicted_trajectory"
+   compress: true # enable bz2 compression
+   rate: 2.0
+ - name: "mrs_uav_status/uav_status"
+   compress: true # enable bz2 compression
+   rate: 1.0
+ - name: "mrs_uav_status/uav_status_short"
+   compress: true # enable bz2 compression
+   rate: 10.0
+# my topics
+ - name: "blob_det_v2/points"
+   compress: true # enable bz2 compression
+   rate: 1.0
+ - name: "sensor_fusion_v2/goal"
+   compress: true # enable bz2 compression
+   rate: 1.0
+ - name: "motion_optimiser_v2/angle"
+   compress: true # enable bz2 compression
+   rate: 1.0
+ - name: "motion_optimiser_v2/search_angle"
+   compress: true # enable bz2 compression
+   rate: 1.0
+
+services:
+  - name: "trajectory_generation/path"
+    type: mrs_msgs/PathSrv
+  - name: "control_manager/goto_trajectory_start"
+    type: std_srvs/Trigger
+  - name: "control_manager/start_trajectory_tracking"
+    type: std_srvs/Trigger
+  - name: "control_manager/trajectory_reference"
+    type: mrs_msgs/TrajectoryReferenceSrv
+  - name: "uav_manager/land_home"
+    type: std_srvs/Trigger
+  - name: "control_manager/switch_controller"
+    type: mrs_msgs/String
+  - name: "control_manager/switch_tracker"
+    type: mrs_msgs/String
+  - name: "constraint_manager/set_constraints"
+    type: mrs_msgs/String
+  - name: "control_manager/enable_callbacks"
+    type: std_srvs/SetBool
+  - name: "odometry/change_alt_estimator_type_string"
+    type: mrs_msgs/String
+# my services
+  - name: "control_manager/reference"
+    type: mrs_msgs/ReferenceStampedSrv
+  - name: "trigger_motion"
+    type: std_srvs/Trigger
+  - name: "record_centroid"
+    type: std_srvs/Trigger
+  - name: "trigger_mode"
+    type: std_srvs/Trigger

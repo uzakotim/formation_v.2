@@ -1,0 +1,64 @@
+<launch>
+
+  <!-- defines name of the namespace of the drone -->
+  <arg name="UAV_NAME" default="$(env UAV_NAME)" />
+  <arg name="RUN_TYPE" default="$(env RUN_TYPE)" />
+  <arg name="NEIGH_NAME_1" default="$(env NEIGH_NAME_1)"/>
+  <arg name="NEIGH_NAME_2" default="$(env NEIGH_NAME_2)" />
+
+  <!-- set to false if the nodelet should run under an external nodelet manager -->
+  <arg name="standalone" default="true" />
+
+  <!-- allows disabling the gui from command line -->
+  <arg name="gui" default="true" />
+
+  <!-- will it run using GNU debugger? -->
+  <arg name="debug" default="false" />
+  <arg unless="$(arg debug)" name="launch_prefix_debug" value=""/>
+  <arg     if="$(arg debug)" name="launch_prefix_debug" value="debug_roslaunch"/>
+
+  <!-- will it run as standalone nodelet or using a nodelet manager? -->
+  <arg name="manager" default="$(arg UAV_NAME)_sensor_fusion_v2_manager" />
+  <arg     if="$(arg standalone)" name="nodelet" value="standalone"/>
+  <arg unless="$(arg standalone)" name="nodelet" value="load"/>
+  <arg     if="$(arg standalone)" name="nodelet_manager" value=""/>
+  <arg unless="$(arg standalone)" name="nodelet_manager" value="$(arg manager)"/>
+
+  <!-- Namespace - all topics and parameters will be remapped using this namespace as a prefix (eg.: "/sync_blob_det/image_in" to "/uav1/sync_blob_det/image_in") -->
+  <group ns="$(arg UAV_NAME)">
+
+    <!-- EdgeDetect nodelet -->
+    <node pkg="nodelet" type="nodelet" name="sensor_fusion_v2" args="$(arg nodelet) sensor_fusion_v2/SensFuse $(arg nodelet_manager)" launch-prefix="$(arg launch_prefix_debug)" output="screen">
+
+      <!-- Parameters loaded from launch file -->
+      <param name="gui" type="bool" value="$(arg gui)"/>
+
+      <param name="UAV_NAME" type="string" value="$(arg UAV_NAME)"/>
+      <param name="NEIGH_NAME_1" type="string" value="$(env NEIGH_NAME_1)"/>
+      <param name="NEIGH_NAME_2" type="string" value="$(env NEIGH_NAME_2)"/>
+      <!-- ROS parameters config file -->
+      <rosparam file="$(find sensor_fusion_v2)/config/default.yaml" />
+      <rosparam file="$(find sensor_fusion_v2)/config/$(arg RUN_TYPE).yaml" />
+
+      <!-- Subscribers (note that the topic names will also be remapped using the namespace as a prefix) -->
+      <!-- <remap from="~image_in" to="mobius_front/image_raw" /> -->
+      <!-- <remap from="~camera_info_in" to="mobius_front/camera_info" /> -->
+      <!-- Timur Uzakov Modification  -->
+      <remap from="~odometry_own_in" to="/$(arg UAV_NAME)/fake_odometry" />
+      <remap from="~odometry_neigh1_in" to="/$(arg NEIGH_NAME_1)/fake_odometry" />
+      <remap from="~odometry_neigh2_in" to="/$(arg NEIGH_NAME_2)/fake_odometry" />
+      <!-- <remap from="~heading_in" to="/$(arg UAV_NAME)/odometry/heading_state_out" /> -->
+      <remap from="~points_own_in" to="/$(arg UAV_NAME)/blob_det_v2/points" />
+      <remap from="~points_neigh1_in" to="/$(arg NEIGH_NAME_1)/blob_det_v2/points" />
+      <remap from="~points_neigh2_in" to="/$(arg NEIGH_NAME_2)/blob_det_v2/points" />
+      <remap from="~angle_in_1" to="/$(arg NEIGH_NAME_1)/motion_optimiser_v2/angle" />
+      <remap from="~angle_in_2" to="/$(arg NEIGH_NAME_2)/motion_optimiser_v2/angle" />
+      
+      <!-- Publishers (note that the topic names will also be remapped using the namespace as a prefix) -->
+      <remap from="~test_publisher" to="~image_number" />
+
+    </node>
+    
+  </group>
+
+</launch>
