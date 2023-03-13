@@ -67,7 +67,7 @@ input=(
 ' 
   'motion_optimisation' 'export UAV_NAME="uav$NUMBER1"; export NEIGH_NAME_1="uav$NUMBER2";export NEIGH_NAME_2="uav$NUMBER3"; waitForRos; waitForOdometry; roslaunch motion_optimiser_v2 motion_optimiser_v2.launch 
 '
-  'commander' 'export UAV_NAME_1="uav$NUMBER1"; export UAV_NAME_2="uav$NUMBER2"; export UAV_NAME_3="uav$NUMBER3"; waitForRos; roslaunch  mode_commander mode_commander.launch
+  'commander' 'export UAV_NAME="uav$NUMBER1"; export UAV_NAME_1="uav$NUMBER1"; export UAV_NAME_2="uav$NUMBER2"; export UAV_NAME_3="uav$NUMBER3"; waitForRos; roslaunch  mode_commander mode_commander.launch
 '
 )
 

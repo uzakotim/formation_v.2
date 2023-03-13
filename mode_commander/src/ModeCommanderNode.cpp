@@ -47,7 +47,7 @@ namespace mode_commander
             ros::shutdown();
         }
         
-        ROS_INFO_STREAM("Mode selector GUIDE: \n"<<"press r for recording/not_recording centroid between drones\n"<<"press 1 for moving/stopping uav1"<<'\n'<<"press 2 for moving/stopping uav2"<<'\n'<<"press 3 for moving/stopping uav3\n"<<"press s to switch mode: searching/staying\n"<<"press q to exit\n");
+        ROS_INFO_STREAM("Mode selector GUIDE: \n"<<"press r for recording/not_recording centroid between drones\n"<<"press 1 for moving/stopping "<<_uav_name_1<<'\n'<<"press 2 for moving/stopping "<<_uav_name_2<<'\n'<<"press 3 for moving/stopping "<<_uav_name_3<<"\n"<<"press s to switch mode: searching/staying\n"<<"press q to exit\n");
         ros::ServiceClient client_uav1 = private_nh.serviceClient<std_srvs::Trigger>("/"+_uav_name_1 +"/trigger_motion");
         ros::ServiceClient client_uav2 = private_nh.serviceClient<std_srvs::Trigger>("/"+_uav_name_2 +"/trigger_motion");
         ros::ServiceClient client_uav3 = private_nh.serviceClient<std_srvs::Trigger>("/"+_uav_name_3 +"/trigger_motion");
