@@ -32,10 +32,12 @@ namespace mode_commander
         ROS_INFO("Initializing mode selector");
         
 
-        mrs_lib::ParamLoader param_loader(private_nh, "ModeCommanderNode");
         std::string _uav_name_1 = "";
         std::string _uav_name_2 = "";
         std::string _uav_name_3 = "";
+
+
+        mrs_lib::ParamLoader param_loader(private_nh,"ModeCommanderNode");
         param_loader.loadParam("UAV_NAME_1", _uav_name_1);
         param_loader.loadParam("UAV_NAME_2", _uav_name_2);
         param_loader.loadParam("UAV_NAME_3", _uav_name_3);

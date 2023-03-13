@@ -1,0 +1,14 @@
+<launch>
+  <arg name="UAV_NAME_1" default="$(env UAV_NAME_1)" />
+  <arg name="RUN_TYPE" default="$(env RUN_TYPE)" />
+  <arg name="UAV_NAME_2" default="$(env UAV_NAME_2)"/>
+  <arg name="UAV_NAME_3" default="$(env UAV_NAME_3)" />  
+  <node pkg="nodelet" type="nodelet" name="standalone_nodelet"  args="manager" output="screen"/>
+
+  <node pkg="nodelet" type="nodelet" name="ModeCommanderNode" args="load mode_commander/ModeCommanderNode standalone_nodelet" output="screen">
+    <param name="UAV_NAME_1" type="string" value="$(arg UAV_NAME_1)"/>
+    <param name="UAV_NAME_2" type="string" value="$(arg UAV_NAME_2)"/>
+    <param name="UAV_NAME_3" type="string" value="$(arg UAV_NAME_3)"/>
+    
+  </node>
+</launch>
