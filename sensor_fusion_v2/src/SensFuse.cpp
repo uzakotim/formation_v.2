@@ -171,7 +171,7 @@ private:
   double offset_angle_;
   const std::vector<double> offset_angles {0.0,2.0944,-2.0944};
   double own_x{-10000000000.0},own_y{-10000000000.0};
-
+  double total_x{0.0},total_y{0.0},total_z{0.0},avg_x{0.0},avg_y{0.0},avg_z{0.0};
   // | ------------- variables for point projection ------------- |
   std::string                                 world_frame_id_;
   double                                      world_point_x_;
@@ -645,7 +645,12 @@ void SensFuse::callbackTimerPublishGoal([[maybe_unused]] const ros::TimerEvent& 
   if (!is_initialized_) {
     return;
   }
-  double total_x{0.0},total_y{0.0},total_z{0.0},avg_x{0.0},avg_y{0.0},avg_z{0.0};
+  total_x = 0.0;
+  total_y = 0.0;
+  total_z = 0.0;
+  avg_x   = 0.0;
+  avg_y   = 0.0;
+  avg_z   = 0.0;
   if (centroids.size()>0)
   { 
     for (unsigned i=0; i<centroids.size(); i++)
@@ -678,7 +683,7 @@ void SensFuse::callbackTimerPublishGoal([[maybe_unused]] const ros::TimerEvent& 
 
     offset_x = max_radius*std::cos(offset_angle_);
     offset_y = max_radius*std::sin(offset_angle_);
-    offset_z = 5.0;
+    offset_z = 4.0;
 
     goal_pose = (cv::Mat_<float>(3,1) << avg_x + offset_x,avg_y + offset_y,avg_z+offset_z);
 
