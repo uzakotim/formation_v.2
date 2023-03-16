@@ -374,6 +374,7 @@ void SensFuse::callbackROBOT(const mrs_msgs::PoseWithCovarianceArrayStampedConst
   double dt = duration.toSec();
   
   ROS_INFO("[RECEIVED OWN]");
+  ROS_INFO_STREAM("[dt] : "<<dt);
 
   /* update the checks-related variables (in a thread-safe manner) */
   {
@@ -758,13 +759,13 @@ std::tuple<Vector6d, Matrix6x6d> SensFuse::lkfPredict(const Vector6d &x, const M
   // PUT YOUR CODE HERE
   new_x = A*x;
   new_x_cov = A*x_cov*A.transpose()+Q;
-  ROS_INFO_STREAM("[prediction covariance] :"<<'\n');
-  ROS_INFO_STREAM(new_x_cov(0,0)<<" "<<new_x_cov(0,1)<<" "<<new_x_cov(0,2)<<" "<<new_x_cov(0,3)<<" "<<new_x_cov(0,4)<<" "<<new_x_cov(0,5)<<'\n');
-  ROS_INFO_STREAM(new_x_cov(1,0)<<" "<<new_x_cov(1,1)<<" "<<new_x_cov(1,2)<<" "<<new_x_cov(1,3)<<" "<<new_x_cov(1,4)<<" "<<new_x_cov(1,5)<<'\n');
-  ROS_INFO_STREAM(new_x_cov(2,0)<<" "<<new_x_cov(2,1)<<" "<<new_x_cov(2,2)<<" "<<new_x_cov(2,3)<<" "<<new_x_cov(2,4)<<" "<<new_x_cov(2,5)<<'\n');
-  ROS_INFO_STREAM(new_x_cov(3,0)<<" "<<new_x_cov(3,1)<<" "<<new_x_cov(3,2)<<" "<<new_x_cov(3,3)<<" "<<new_x_cov(3,4)<<" "<<new_x_cov(3,5)<<'\n');
-  ROS_INFO_STREAM(new_x_cov(4,0)<<" "<<new_x_cov(4,1)<<" "<<new_x_cov(4,2)<<" "<<new_x_cov(4,3)<<" "<<new_x_cov(4,4)<<" "<<new_x_cov(4,5)<<'\n');
-  ROS_INFO_STREAM(new_x_cov(5,0)<<" "<<new_x_cov(5,1)<<" "<<new_x_cov(5,2)<<" "<<new_x_cov(5,3)<<" "<<new_x_cov(5,4)<<" "<<new_x_cov(5,5)<<'\n');
+  // ROS_INFO_STREAM("[prediction covariance] :"<<'\n');
+  // ROS_INFO_STREAM(new_x_cov(0,0)<<" "<<new_x_cov(0,1)<<" "<<new_x_cov(0,2)<<" "<<new_x_cov(0,3)<<" "<<new_x_cov(0,4)<<" "<<new_x_cov(0,5)<<'\n');
+  // ROS_INFO_STREAM(new_x_cov(1,0)<<" "<<new_x_cov(1,1)<<" "<<new_x_cov(1,2)<<" "<<new_x_cov(1,3)<<" "<<new_x_cov(1,4)<<" "<<new_x_cov(1,5)<<'\n');
+  // ROS_INFO_STREAM(new_x_cov(2,0)<<" "<<new_x_cov(2,1)<<" "<<new_x_cov(2,2)<<" "<<new_x_cov(2,3)<<" "<<new_x_cov(2,4)<<" "<<new_x_cov(2,5)<<'\n');
+  // ROS_INFO_STREAM(new_x_cov(3,0)<<" "<<new_x_cov(3,1)<<" "<<new_x_cov(3,2)<<" "<<new_x_cov(3,3)<<" "<<new_x_cov(3,4)<<" "<<new_x_cov(3,5)<<'\n');
+  // ROS_INFO_STREAM(new_x_cov(4,0)<<" "<<new_x_cov(4,1)<<" "<<new_x_cov(4,2)<<" "<<new_x_cov(4,3)<<" "<<new_x_cov(4,4)<<" "<<new_x_cov(4,5)<<'\n');
+  // ROS_INFO_STREAM(new_x_cov(5,0)<<" "<<new_x_cov(5,1)<<" "<<new_x_cov(5,2)<<" "<<new_x_cov(5,3)<<" "<<new_x_cov(5,4)<<" "<<new_x_cov(5,5)<<'\n');
 
   
   return {new_x, new_x_cov};
@@ -787,13 +788,13 @@ std::tuple<Vector6d, Matrix6x6d> SensFuse::lkfCorrect(const Vector6d &x, const M
   Id6x6.setIdentity();
 
   new_x_cov = (Id6x6 - K*H)*x_cov;
-  ROS_INFO_STREAM("[filtering covariance] :"<<'\n');
-  ROS_INFO_STREAM(new_x_cov(0,0)<<" "<<new_x_cov(0,1)<<" "<<new_x_cov(0,2)<<" "<<new_x_cov(0,3)<<" "<<new_x_cov(0,4)<<" "<<new_x_cov(0,5)<<'\n');
-  ROS_INFO_STREAM(new_x_cov(1,0)<<" "<<new_x_cov(1,1)<<" "<<new_x_cov(1,2)<<" "<<new_x_cov(1,3)<<" "<<new_x_cov(1,4)<<" "<<new_x_cov(1,5)<<'\n');
-  ROS_INFO_STREAM(new_x_cov(2,0)<<" "<<new_x_cov(2,1)<<" "<<new_x_cov(2,2)<<" "<<new_x_cov(2,3)<<" "<<new_x_cov(2,4)<<" "<<new_x_cov(2,5)<<'\n');
-  ROS_INFO_STREAM(new_x_cov(3,0)<<" "<<new_x_cov(3,1)<<" "<<new_x_cov(3,2)<<" "<<new_x_cov(3,3)<<" "<<new_x_cov(3,4)<<" "<<new_x_cov(3,5)<<'\n');
-  ROS_INFO_STREAM(new_x_cov(4,0)<<" "<<new_x_cov(4,1)<<" "<<new_x_cov(4,2)<<" "<<new_x_cov(4,3)<<" "<<new_x_cov(4,4)<<" "<<new_x_cov(4,5)<<'\n');
-  ROS_INFO_STREAM(new_x_cov(5,0)<<" "<<new_x_cov(5,1)<<" "<<new_x_cov(5,2)<<" "<<new_x_cov(5,3)<<" "<<new_x_cov(5,4)<<" "<<new_x_cov(5,5)<<'\n');
+  // ROS_INFO_STREAM("[filtering covariance] :"<<'\n');
+  // ROS_INFO_STREAM(new_x_cov(0,0)<<" "<<new_x_cov(0,1)<<" "<<new_x_cov(0,2)<<" "<<new_x_cov(0,3)<<" "<<new_x_cov(0,4)<<" "<<new_x_cov(0,5)<<'\n');
+  // ROS_INFO_STREAM(new_x_cov(1,0)<<" "<<new_x_cov(1,1)<<" "<<new_x_cov(1,2)<<" "<<new_x_cov(1,3)<<" "<<new_x_cov(1,4)<<" "<<new_x_cov(1,5)<<'\n');
+  // ROS_INFO_STREAM(new_x_cov(2,0)<<" "<<new_x_cov(2,1)<<" "<<new_x_cov(2,2)<<" "<<new_x_cov(2,3)<<" "<<new_x_cov(2,4)<<" "<<new_x_cov(2,5)<<'\n');
+  // ROS_INFO_STREAM(new_x_cov(3,0)<<" "<<new_x_cov(3,1)<<" "<<new_x_cov(3,2)<<" "<<new_x_cov(3,3)<<" "<<new_x_cov(3,4)<<" "<<new_x_cov(3,5)<<'\n');
+  // ROS_INFO_STREAM(new_x_cov(4,0)<<" "<<new_x_cov(4,1)<<" "<<new_x_cov(4,2)<<" "<<new_x_cov(4,3)<<" "<<new_x_cov(4,4)<<" "<<new_x_cov(4,5)<<'\n');
+  // ROS_INFO_STREAM(new_x_cov(5,0)<<" "<<new_x_cov(5,1)<<" "<<new_x_cov(5,2)<<" "<<new_x_cov(5,3)<<" "<<new_x_cov(5,4)<<" "<<new_x_cov(5,5)<<'\n');
   return {new_x, new_x_cov};
 }
 
