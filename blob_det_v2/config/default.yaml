@@ -13,3 +13,6 @@ rate:
   publish: 50 # [Hz]
   # how often check whether msgs are arriving?
   check_subscribers: 1 # [Hz]
+
+# select environment : "ground" or "water"
+environment: "ground"

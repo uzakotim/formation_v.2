@@ -70,6 +70,7 @@ public:
   cv::Mat ReturnRedMask(cv::Mat image);
   cv::Mat ReturnOrangeMask(cv::Mat image);
   cv::Mat ReturnYellowMask(cv::Mat image);
+  cv::Mat ReturnGreenMask(cv::Mat image);
   cv::Mat ReturnPurpleMask(cv::Mat image);
   cv::Mat ReturnBlueMask(cv::Mat image);
   std::vector<std::vector<cv::Point>> ReturnContours(cv::Mat image_threshold);
@@ -85,6 +86,7 @@ private:
   bool _gui_ = false;
 
   std::string _uav_name_;
+  std::string _environment_;
 
   // | --------------------- MRS transformer -------------------- |
 
@@ -177,11 +179,15 @@ private:
  
 
   // in BGR
-  const cv::Scalar                  detection_color_blue = cv::Scalar(255,100,0);
-  const cv::Scalar                  detection_color_red = cv::Scalar(0,0,255);
+  const cv::Scalar                  detection_color_blue   = cv::Scalar(255,100,0);
+  const cv::Scalar                  detection_color_red    = cv::Scalar(0,0,255);
   const cv::Scalar                  detection_color_yellow = cv::Scalar(0,255,255);
   const cv::Scalar                  detection_color_orange = cv::Scalar(13,143,255);
   const cv::Scalar                  detection_color_purple = cv::Scalar(255,0,255);
+  const cv::Scalar                  detection_color_green  = cv::Scalar(0,255,0);
+  cv::Scalar                        detection_color_one    = cv::Scalar(0,0,0);
+  cv::Scalar                        detection_color_two    = cv::Scalar(0,0,0);
+  cv::Scalar                        detection_color_three  = cv::Scalar(0,0,0);
   
   int blob_size = 200;    
   // | --------- Blob Parameters -------------------------------- |
@@ -230,6 +236,7 @@ void BlobDet::onInit() {
   param_loader.loadParam("world_point/x", world_point_x_);
   param_loader.loadParam("world_point/y", world_point_y_);
   param_loader.loadParam("world_point/z", world_point_z_);
+  param_loader.loadParam("environment", _environment_);
 
   if (!param_loader.loadedSuccessfully()) {
     ROS_ERROR("[WaypointFlier]: failed to load non-optional parameters!");
@@ -362,13 +369,35 @@ void BlobDet::GrabRGBD(const sensor_msgs::ImageConstPtr& msgRGB,const sensor_msg
   // 3) finding mask
   cv::Mat     red_mask        = BlobDet::ReturnRedMask(image_HSV);
   cv::Mat     blue_mask       = BlobDet::ReturnBlueMask(image_HSV);
-  // cv::Mat     yellow_mask     = BlobDet::ReturnYellowMask(image_HSV);
+  cv::Mat     yellow_mask     = BlobDet::ReturnYellowMask(image_HSV);
   cv::Mat     purple_mask     = BlobDet::ReturnPurpleMask(image_HSV);
-  // cv::Mat     orange_mask     = BlobDet::ReturnOrangeMask(image_HSV);
+  cv::Mat     green_mask      = BlobDet::ReturnGreenMask(image_HSV);
+  cv::Mat     orange_mask     = BlobDet::ReturnOrangeMask(image_HSV);
+
+  std::vector<std::vector<cv::Point>> contours_one;
+  std::vector<std::vector<cv::Point>> contours_two;
+  std::vector<std::vector<cv::Point>> contours_three;
   // 4) finding contours
-  std::vector<std::vector<cv::Point>> contours_red = BlobDet::ReturnContours(red_mask);
-  std::vector<std::vector<cv::Point>> contours_blue = BlobDet::ReturnContours(blue_mask);
-  std::vector<std::vector<cv::Point>> contours_purple = BlobDet::ReturnContours(purple_mask);
+  if (_environment_ == "ground")
+  {
+    contours_one = BlobDet::ReturnContours(red_mask);
+    detection_color_one = detection_color_red;
+    contours_two = BlobDet::ReturnContours(blue_mask);
+    detection_color_two = detection_color_blue;
+    contours_three = BlobDet::ReturnContours(purple_mask);
+    detection_color_three = detection_color_purple;
+
+  }
+  else if (_environment_ == "water")
+  {
+
+    contours_one = BlobDet::ReturnContours(red_mask);
+    detection_color_one = detection_color_red;
+    contours_two = BlobDet::ReturnContours(green_mask);
+    detection_color_two = detection_color_green;
+    contours_three = BlobDet::ReturnContours(orange_mask);
+    detection_color_three = detection_color_orange;
+  }
   // std::vector<std::vector<cv::Point>> contours_orange = BlobDet::ReturnContours(orange_mask);
   
   // Image for detections
@@ -376,16 +405,16 @@ void BlobDet::GrabRGBD(const sensor_msgs::ImageConstPtr& msgRGB,const sensor_msg
   std::vector<mrs_msgs::PoseWithCovarianceIdentified> points_array {};
   if (image_counter_>10){
     
-    // Red Mask
-    if (contours_red.size()>0)
+    // Mast one
+    if (contours_one.size()>0)
     {
-      for (size_t i = 0;i<contours_red.size();i++)
+      for (size_t i = 0;i<contours_one.size();i++)
       {
-              double newArea = cv::contourArea(contours_red.at(i));
+              double newArea = cv::contourArea(contours_one.at(i));
               if(newArea > blob_size)
               {   
                   // Finding blob's center       
-                  cv::Point2f center = BlobDet::FindCenter(contours_red, i);
+                  cv::Point2f center = BlobDet::FindCenter(contours_one, i);
                   unsigned short val = depth_image.at<unsigned short>(center.y, center.x);
                   center3D.x = center.x;
                   center3D.y = center.y;
@@ -406,23 +435,23 @@ void BlobDet::GrabRGBD(const sensor_msgs::ImageConstPtr& msgRGB,const sensor_msg
                   // Drawing 
                   statePt2D.x = center.x;
                   statePt2D.y = center.y;
-                  cv::circle  (drawing, statePt2D, 5, detection_color_red, 10);
-                  float radius = BlobDet::FindRadius(contours_red, i);
-                  cv::circle  (drawing, statePt2D, int(radius), detection_color_red, 2 );
+                  cv::circle  (drawing, statePt2D, 5, detection_color_one, 10);
+                  float radius = BlobDet::FindRadius(contours_one, i);
+                  cv::circle  (drawing, statePt2D, int(radius), detection_color_one, 2 );
               }
       }
     }
-    // Blue Mask
+    // Mask Two
 
-    if (contours_blue.size()>0)
+    if (contours_two.size()>0)
     {
-      for (size_t j = 0;j<contours_blue.size();j++)
+      for (size_t j = 0;j<contours_two.size();j++)
       {
-              double newArea = cv::contourArea(contours_blue.at(j));
+              double newArea = cv::contourArea(contours_two.at(j));
               if(newArea > blob_size)
               {   
                   // Finding blob's center       
-                  cv::Point2f center = BlobDet::FindCenter(contours_blue, j);
+                  cv::Point2f center = BlobDet::FindCenter(contours_two, j);
                   unsigned short val = depth_image.at<unsigned short>(center.y, center.x);
                   center3D.x = center.x;
                   center3D.y = center.y;
@@ -443,22 +472,22 @@ void BlobDet::GrabRGBD(const sensor_msgs::ImageConstPtr& msgRGB,const sensor_msg
                   // Drawing 
                   statePt2D.x = center.x;
                   statePt2D.y = center.y;
-                  cv::circle  (drawing, statePt2D, 5, detection_color_blue, 10);
-                  float radius = BlobDet::FindRadius(contours_blue, j);
-                  cv::circle  (drawing, statePt2D, int(radius), detection_color_blue, 2 );
+                  cv::circle  (drawing, statePt2D, 5, detection_color_two, 10);
+                  float radius = BlobDet::FindRadius(contours_two, j);
+                  cv::circle  (drawing, statePt2D, int(radius), detection_color_two, 2 );
               }
       }
     } 
-    // Purple mask
-    if (contours_purple.size()>0)
+    // Mask three
+    if (contours_three.size()>0)
     {
-      for (size_t n = 0;n<contours_purple.size();n++)
+      for (size_t n = 0;n<contours_three.size();n++)
       {
-              double newArea = cv::contourArea(contours_purple.at(n));
+              double newArea = cv::contourArea(contours_three.at(n));
               if(newArea > blob_size)
               {   
                   // Finding blob's center       
-                  cv::Point2f center = BlobDet::FindCenter(contours_purple, n);
+                  cv::Point2f center = BlobDet::FindCenter(contours_three, n);
                   unsigned short val = depth_image.at<unsigned short>(center.y, center.x);
                   center3D.x = center.x;
                   center3D.y = center.y;
@@ -479,9 +508,9 @@ void BlobDet::GrabRGBD(const sensor_msgs::ImageConstPtr& msgRGB,const sensor_msg
                   // Drawing 
                   statePt2D.x = center.x;
                   statePt2D.y = center.y;
-                  cv::circle  (drawing, statePt2D, 5, detection_color_purple, 10);
-                  float radius = BlobDet::FindRadius(contours_purple, n);
-                  cv::circle  (drawing, statePt2D, int(radius), detection_color_purple, 2 );
+                  cv::circle  (drawing, statePt2D, 5, detection_color_three, 10);
+                  float radius = BlobDet::FindRadius(contours_three, n);
+                  cv::circle  (drawing, statePt2D, int(radius), detection_color_three, 2 );
               }
       }
     }
@@ -768,6 +797,12 @@ geometry_msgs::PoseStamped BlobDet::projectWorldPointToGlobal(cv::InputArray ima
   {
       cv::Mat total;
       cv::inRange  (image, BlobDet::color_yellow_min, BlobDet::color_yellow_max,total); 
+      return total;
+  }
+  cv::Mat BlobDet::ReturnGreenMask(cv::Mat image)
+  {
+      cv::Mat total;
+      cv::inRange  (image, BlobDet::color_green_min, BlobDet::color_green_max,total); 
       return total;
   }
   cv::Mat BlobDet::ReturnPurpleMask(cv::Mat image)
