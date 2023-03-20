@@ -634,19 +634,23 @@ void Optimiser::callbackTimerPublishGoal([[maybe_unused]] const ros::TimerEvent&
     if ((std::abs(own_search_angle - neigh1_search_angle) > 4.0) && (std::abs(own_search_angle - neigh2_search_angle) <= 4.0))
     {
       searching_circle_angle = (1.0/2.0)*(neigh2_search_angle + own_search_angle);
+      own_search_angle = searching_circle_angle;
       // searching_circle_angle = (1.0/3.0)*(neigh1_search_angle + neigh2_search_angle + own_search_angle);
     }else if ((std::abs(own_search_angle - neigh1_search_angle) <= 4.0) && (std::abs(own_search_angle - neigh2_search_angle) > 4.0))
     {
       searching_circle_angle = (1.0/2.0)*(neigh1_search_angle + own_search_angle);
+      own_search_angle = searching_circle_angle;
       // searching_circle_angle = (1.0/3.0)*(neigh1_search_angle + neigh2_search_angle + own_search_angle);
     }
     else if ((std::abs(own_search_angle - neigh1_search_angle) > 4.0)&& (std::abs(own_search_angle - neigh2_search_angle) > 4.0))
     {
       searching_circle_angle = own_search_angle;
+      own_search_angle += omega;
     }
     else
     {
-          searching_circle_angle = (1.0/3.0)*(neigh1_search_angle + neigh2_search_angle + own_search_angle);
+      searching_circle_angle = (1.0/3.0)*(neigh1_search_angle + neigh2_search_angle + own_search_angle);
+      own_search_angle = searching_circle_angle;
     }
 
     ROS_INFO_STREAM("[current angle] "<<searching_circle_angle);
@@ -692,7 +696,6 @@ void Optimiser::callbackTimerPublishGoal([[maybe_unused]] const ros::TimerEvent&
     goal = (cv::Mat_<double>(2,1) << avg_x + offset_x,avg_y + offset_y);
     go_to = Optimiser::calculateFormation(state,state_neigh1,state_neigh2,goal);
 
-    own_search_angle += omega;
     double angle_to_send = searching_circle_angle + omega;
     if (angle_to_send >= 2.0*M_PI)
     {
