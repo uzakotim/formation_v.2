@@ -557,13 +557,17 @@ void Optimiser::callbackTimerPublishGoal([[maybe_unused]] const ros::TimerEvent&
   }
   if ((neigh1_x == -10000000000.0) || (neigh1_y == -10000000000.0))
   {
+    mutex_odom_2.lock();
     neigh1_x = own_x;
     neigh1_y = own_y;
+    mutex_odom_2.unlock();
   }
   if ((neigh2_x == -10000000000.0) || (neigh2_y == -10000000000.0))
   {
+    mutex_odom_3.lock();
     neigh2_x = own_x;
     neigh2_y = own_y;
+    mutex_odom_3.unlock();
   }
   
    /* update the checks-related variables (in a thread-safe manner) */
