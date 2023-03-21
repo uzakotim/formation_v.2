@@ -829,28 +829,28 @@ double Optimiser::sign(double input)
 
 double Optimiser::Cost(double x,double y,double x_prev,double y_prev,double obs_x,double obs_y, double obs_2_x,double obs_2_y,double goal_x,double goal_y)
 {
-  const double width_goal = 25;
-  const double width_obst = 4;
-  const double height = 5;
-  const double goal_depth = 5;
-  const double obst_weight = 50;
+  const double height       = 5;
+  const double width_goal   = 25;
+  const double width_obst   = 4;
+  const double goal_depth   = 5;
+  const double obst_weight  = 16; //50
   return 4*std::pow((x-x_prev),2) + 4*std::pow((y-y_prev),2) + 1.0*std::pow((y-goal_y),2) + 1.0*std::pow((x-goal_x),2) + height + obst_weight*std::exp(-(std::pow((y-obs_y),2)/width_obst))*std::exp(-(std::pow((x-obs_x),2))/width_obst)+ std::exp(-std::pow((y-obs_2_y),2)/width_obst)*exp(-std::pow((x-obs_2_x),2)/width_obst) - goal_depth*std::exp(-std::pow((x-goal_x),2)/width_goal)*std::exp(-(std::pow((y-goal_y),2)/width_goal));
 }
 double Optimiser::grad_x(double x,double y,double x_prev,double y_prev,double obs_x,double obs_y, double obs_2_x,double obs_2_y,double goal_x,double goal_y)
 {
-  const double width_goal = 25;
-  const double width_obst = 4;
-  const double goal_depth = 5;
-  const double obst_weight = 50;
+  const double width_goal   = 25;
+  const double width_obst   = 4;
+  const double goal_depth   = 5;
+  const double obst_weight  = 16; //50
   return 8*(x-x_prev) + 2.0*(x-goal_x) + obst_weight*std::exp(-(std::pow((y-obs_y),2))/width_obst)*std::exp(-(std::pow((x-obs_x),2))/width_obst)*(-(2*(x-obs_x)/width_obst)) + obst_weight*std::exp(-(std::pow((y-obs_2_y),2))/width_obst)*std::exp(-(std::pow((x-obs_2_x),2))/width_obst)*(-(2*(x-obs_2_x)/width_obst)) - goal_depth*std::exp(-(std::pow((x-goal_x),2))/width_goal)*std::exp(-(std::pow((y-goal_y),2)/width_goal))*(-(2*(x-goal_x)/width_goal));
 
 }
 double Optimiser::grad_y(double x,double y,double x_prev,double y_prev,double obs_x,double obs_y, double obs_2_x,double obs_2_y,double goal_x,double goal_y)
 {
-  const double width_goal = 25;
-  const double width_obst = 4;
-  const double goal_depth = 5;
-  const double obst_weight = 50;
+  const double width_goal   = 25;
+  const double width_obst   = 4;
+  const double goal_depth   = 5;
+  const double obst_weight  = 16; //50
   return 8*(y-y_prev) + 2.0*(y-goal_y) + obst_weight*std::exp(-(std::pow((y-obs_y),2))/width_obst)*std::exp(-(std::pow((x-obs_x),2))/width_obst)*(-(2*(y-obs_y)/width_obst)) + obst_weight*std::exp(-(std::pow((y-obs_2_y),2))/width_obst)*std::exp(-(std::pow((x-obs_2_x),2))/width_obst)*(-(2*(y-obs_2_y)/width_obst)) - goal_depth*std::exp(-(std::pow((x-goal_x),2))/width_goal)*std::exp(-(std::pow((y-goal_y),2)/width_goal))*(-(2*(y-goal_y)/width_goal));
 }
 }  // namespace sensor_fusion_example
