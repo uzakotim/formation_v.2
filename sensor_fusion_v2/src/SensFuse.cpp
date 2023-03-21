@@ -110,6 +110,7 @@ private:
   std::string _uav_name_;
   std::string _uav_name_1_;
   std::string _uav_name_2_;
+  int memory_size_ = 0;
   // | --------------------- MRS transformer -------------------- |
 
   std::unique_ptr<mrs_lib::Transformer> transformer_;
@@ -246,6 +247,7 @@ void SensFuse::onInit() {
   param_loader.loadParam("world_point/y", world_point_y_);
   param_loader.loadParam("world_point/z", world_point_z_);
   param_loader.loadParam("formation_circle/radius_threshold", radius_threshold);
+  param_loader.loadParam("memory_size", memory_size_);
 
   if (!param_loader.loadedSuccessfully()) {
     ROS_ERROR("[WaypointFlier]: failed to load non-optional parameters!");
@@ -434,7 +436,7 @@ void SensFuse::callbackROBOT(const mrs_msgs::PoseWithCovarianceArrayStampedConst
       {
         mutex_centroids.lock();
         centroids.push_back(center3D_1);
-        if (centroids.size()>10)
+        if (centroids.size()>memory_size_)
         {
             centroids.pop_front();
         }
@@ -524,7 +526,7 @@ void SensFuse::callbackNEIGH1(const mrs_msgs::PoseWithCovarianceArrayStampedCons
     {
       mutex_centroids.lock();
       centroids.push_back(center3D_2);
-      if (centroids.size()>10)
+      if (centroids.size()>memory_size_)
       {
           centroids.pop_front();
       }
@@ -615,7 +617,7 @@ void SensFuse::callbackNEIGH2(const mrs_msgs::PoseWithCovarianceArrayStampedCons
       {
         mutex_centroids.lock();
         centroids.push_back(center3D_3);
-        if (centroids.size()>10)
+        if (centroids.size()>memory_size_)
         {
             centroids.pop_front();
         }

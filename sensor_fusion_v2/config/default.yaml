@@ -3,14 +3,15 @@ canny_threshold: 70
 
 # coordinates of the point, which will be backprojected to the camera image from the specified frame
 world_frame_id: "down_rgbd/color_optical"
+# world_frame_id: "gps_origin"
 world_point:
   x: 0.0
   y: 0.0
   z: 0.0
 formation_circle:
   radius_threshold: 3.0
+
+memory_size: 20  #how many centroids to store, how fast centroids will be updated
 rate:
-  # how often to publish my topic?
-  publish: 25 # [Hz]
-  # how often check whether msgs are arriving?
-  check_subscribers: 1 # [Hz]
+  publish: 25 # [Hz] how often to publish my topic?
+  check_subscribers: 1 # [Hz] how often check whether msgs are arriving?
