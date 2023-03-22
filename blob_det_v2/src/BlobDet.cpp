@@ -365,7 +365,7 @@ void BlobDet::GrabRGBD(const sensor_msgs::ImageConstPtr& msgRGB,const sensor_msg
   // 1) smoothing
   cv::Mat     blurred_image   = BlobDet::GaussianBlur(cv_image);
   // 2) conversion to hsv
-  cv::Mat     image_HSV       = BlobDet::BGRtoHSV(cv_image);
+  cv::Mat     image_HSV       = BlobDet::BGRtoHSV(blurred_image);
   // 3) finding mask
   cv::Mat     red_mask        = BlobDet::ReturnRedMask(image_HSV);
   cv::Mat     blue_mask       = BlobDet::ReturnBlueMask(image_HSV);
