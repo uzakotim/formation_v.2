@@ -34,15 +34,18 @@ namespace mode_commander
         ROS_INFO("Initializing mode selector");
         
 
-        std::string _uav_name_1 = "";
-        std::string _uav_name_2 = "";
-        std::string _uav_name_3 = "";
+        std::string _uav_name_1     = "";
+        std::string _uav_name_2     = "";
+        std::string _uav_name_3     = "";
+        std::string _uav_name_own   = "";
 
 
         mrs_lib::ParamLoader param_loader(private_nh,"ModeCommanderNode");
+        
         param_loader.loadParam("UAV_NAME_1", _uav_name_1);
         param_loader.loadParam("UAV_NAME_2", _uav_name_2);
         param_loader.loadParam("UAV_NAME_3", _uav_name_3);
+        param_loader.loadParam("UAV_NAME", _uav_name_own);
 
         if (!param_loader.loadedSuccessfully()) {
             ROS_ERROR("[WaypointFlier]: failed to load non-optional parameters!");
@@ -166,7 +169,7 @@ namespace mode_commander
             {   
                 if (client_rec_uav1.call(rec1))
                 {
-                    ROS_INFO("Successfully sent rec request uav1");
+                    ROS_INFO("Successfully sent record request uav1");
                 }
                 else
                 {
@@ -174,7 +177,7 @@ namespace mode_commander
                 }
                 if (client_rec_uav2.call(rec2))
                 {
-                    ROS_INFO("Successfully sent rec request uav2");
+                    ROS_INFO("Successfully sent record request uav2");
                 }
                 else
                 {
@@ -182,11 +185,11 @@ namespace mode_commander
                 }
                 if (client_rec_uav3.call(rec3))
                 {
-                    ROS_INFO("Successfully sent rec request uav3");
+                    ROS_INFO("Successfully sent record request uav3");
                 }
                 else
                 {
-                    ROS_ERROR("Failed to call rec service uav3");
+                    ROS_ERROR("Failed to call record service uav3");
                 }
             }
             else if (c=='0')
@@ -247,9 +250,23 @@ namespace mode_commander
             }
             else if (c == 'q')
             {
-                if (system("rosnode kill -a")==0)
+                std::string stop_blob_detector = "rosnode kill /"+_uav_name_own+"/blob_det_v2";
+                const char * stop_blob_detector_char = stop_blob_detector.c_str();
+                if (system(stop_blob_detector_char)==1)
                 {   
-                    break;
+                    ROS_ERROR("Failed to stop blob detector");
+                }
+                std::string stop_sensor_fusion = "rosnode kill /"+_uav_name_own+"/sensor_fusion_v2";
+                const char * stop_sensor_fusion_char = stop_sensor_fusion.c_str();
+                if (system(stop_sensor_fusion_char)==1)
+                {   
+                    ROS_ERROR("Failed to stop sensor fusion");
+                }
+                std::string stop_motion_optimiser = "rosnode kill /"+_uav_name_own+"/motion_optimiser_v2";
+                const char * stop_motion_optimiser_char = stop_motion_optimiser.c_str();
+                if (system(stop_motion_optimiser_char)==1)
+                {   
+                    ROS_ERROR("Failed to stop motion optimiser");
                 }
             }
             ros::Duration(0.001).sleep();
