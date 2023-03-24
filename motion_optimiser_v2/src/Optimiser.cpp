@@ -114,8 +114,12 @@ private:
   double offset_y;
   double searching_circle_angle {0.0};
   double searching_circle_radius;
+  double maximal_searching_circle_radius;
+  double minimal_searching_circle_radius;
+  double default_searching_circle_radius;
   /* ros parameters */
   double omega;
+  double delta_angle;
   // {10.0/180.0};
   bool _gui_ = false;
 
@@ -190,6 +194,8 @@ private:
   ros::ServiceServer service_motion_;
   ros::ServiceServer service_mode_;
   ros::ServiceServer service_rec_;
+  ros::ServiceServer service_increase_radius_;
+  ros::ServiceServer service_decrease_radius_;
   // ----------Formation controller parameters--------------
   const double n_pos {1.2};
   const double n_neg {0.5};
@@ -241,6 +247,8 @@ private:
   bool callback_trigger_motion(std_srvs::Trigger::Request  &req, std_srvs::Trigger::Response &res);
   bool callback_trigger_mode(std_srvs::Trigger::Request  &req, std_srvs::Trigger::Response &res);
   bool callback_trigger_rec(std_srvs::Trigger::Request  &req, std_srvs::Trigger::Response &res);
+  bool callback_trigger_increase_radius(std_srvs::Trigger::Request  &req, std_srvs::Trigger::Response &res);
+  bool callback_trigger_decrease_radius(std_srvs::Trigger::Request  &req, std_srvs::Trigger::Response &res);
   
 };
 
@@ -282,14 +290,18 @@ void Optimiser::onInit() {
   param_loader.loadParam("world_point/y", world_point_y_);
   param_loader.loadParam("world_point/z", world_point_z_);
   // param_loader.loadParam("offset_angle/"+_uav_name_, offset_angle_);
-  param_loader.loadParam("search_circle_omega/omega", omega);
+  param_loader.loadParam("search_circle_omega/delta", delta_angle);
+  param_loader.loadParam("search_circle_omega/radius", default_searching_circle_radius);
   param_loader.loadParam("search_circle/formation_radius", max_radius);
   param_loader.loadParam("search_circle/big_circle_radius", searching_circle_radius);
+  param_loader.loadParam("search_circle/maximal_big_circle_radius", maximal_searching_circle_radius);
+  param_loader.loadParam("search_circle/minimal_big_circle_radius", minimal_searching_circle_radius);
 
   if (!param_loader.loadedSuccessfully()) {
     ROS_ERROR("[WaypointFlier]: failed to load non-optional parameters!");
     ros::shutdown();
   }
+  omega = delta_angle;
   
   // | --------------------- tf transformer --------------------- |
   transformer_ = std::make_unique<mrs_lib::Transformer>("Optimiser");
@@ -333,9 +345,13 @@ void Optimiser::onInit() {
   std::string trigger_motion = "/" +_uav_name_ +"/trigger_motion";
   std::string trigger_mode = "/" +_uav_name_ +"/trigger_mode";
   std::string trigger_rec = "/" +_uav_name_ +"/record_centroid";
+  std::string trigger_increase_radius = "/" +_uav_name_ +"/increase_radius";
+  std::string trigger_decrease_radius = "/" +_uav_name_ +"/decrease_radius";
   service_motion_ = nh.advertiseService(trigger_motion, &Optimiser::callback_trigger_motion,this);
   service_mode_   = nh.advertiseService(trigger_mode, &Optimiser::callback_trigger_mode,this);
   service_rec_   = nh.advertiseService(trigger_rec, &Optimiser::callback_trigger_rec,this);
+  service_increase_radius_   = nh.advertiseService(trigger_increase_radius, &Optimiser::callback_trigger_increase_radius,this);
+  service_decrease_radius_   = nh.advertiseService(trigger_decrease_radius, &Optimiser::callback_trigger_decrease_radius,this);
   ROS_INFO_STREAM("commander service ok");
   // ------------------------------------------------------------|
 
@@ -569,6 +585,7 @@ void Optimiser::callbackTimerPublishGoal([[maybe_unused]] const ros::TimerEvent&
     neigh2_y = own_y;
     mutex_odom_3.unlock();
   }
+  omega = default_searching_circle_radius*delta_angle/searching_circle_radius;
   
    /* update the checks-related variables (in a thread-safe manner) */
   {
@@ -655,6 +672,7 @@ void Optimiser::callbackTimerPublishGoal([[maybe_unused]] const ros::TimerEvent&
 
     ROS_INFO_STREAM("[current angle] "<<searching_circle_angle);
     ROS_INFO_STREAM("[circle centroid] x: "<<searching_circle_center_x<<" y: "<<searching_circle_center_y);
+    ROS_INFO_STREAM("[circle radius]    : "<<searching_circle_radius);
     double avg_x = searching_circle_center_x + searching_circle_radius*cos(searching_circle_angle);
     double avg_y = searching_circle_center_y + searching_circle_radius*sin(searching_circle_angle);
     
@@ -763,7 +781,30 @@ bool Optimiser::callback_trigger_rec(std_srvs::Trigger::Request  &req, std_srvs:
     record_centroid_ = !record_centroid_;
     return true;
 }
-
+bool Optimiser::callback_trigger_increase_radius(std_srvs::Trigger::Request  &req, std_srvs::Trigger::Response &res)
+{
+    if (!is_initialized_) {
+      return false;
+    }
+    double temp = searching_circle_radius + 1;
+    if (temp <= maximal_searching_circle_radius)
+    {
+      searching_circle_radius = temp;
+    }
+    return true;
+}
+bool Optimiser::callback_trigger_decrease_radius(std_srvs::Trigger::Request  &req, std_srvs::Trigger::Response &res)
+{
+    if (!is_initialized_) {
+      return false;
+    }
+    double temp = searching_circle_radius - 1;
+    if (temp >= minimal_searching_circle_radius)
+    {
+      searching_circle_radius = temp;
+    }
+    return true;
+}
 
 /*| --------- Optimiser Function --------------------------------|*/
 

@@ -10,10 +10,13 @@ world_point:
   z: 0.0
 search_circle_omega:
   # delta angle in radians
-  omega: 0.0222222222222
+  delta: 0.0222222222222
+  radius: 3.0
 search_circle:
   formation_radius: 4.0
   big_circle_radius: 3.0
+  maximal_big_circle_radius: 20.0
+  minimal_big_circle_radius: 2.0
 rate:
   # how often to publish my topic?
   publish: 5 # [Hz]
