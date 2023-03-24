@@ -349,7 +349,7 @@ void Optimiser::onInit() {
   std::string trigger_decrease_radius = "/" +_uav_name_ +"/decrease_radius";
   service_motion_ = nh.advertiseService(trigger_motion, &Optimiser::callback_trigger_motion,this);
   service_mode_   = nh.advertiseService(trigger_mode, &Optimiser::callback_trigger_mode,this);
-  service_rec_   = nh.advertiseService(trigger_rec, &Optimiser::callback_trigger_rec,this);
+  service_rec_    = nh.advertiseService(trigger_rec, &Optimiser::callback_trigger_rec,this);
   service_increase_radius_   = nh.advertiseService(trigger_increase_radius, &Optimiser::callback_trigger_increase_radius,this);
   service_decrease_radius_   = nh.advertiseService(trigger_decrease_radius, &Optimiser::callback_trigger_decrease_radius,this);
   ROS_INFO_STREAM("commander service ok");
@@ -726,7 +726,7 @@ void Optimiser::callbackTimerPublishGoal([[maybe_unused]] const ros::TimerEvent&
     pub_search_angle_.publish(msg_angle);
   }
   ROS_INFO_STREAM("[own angle] "<<own_angle);
-    // MRS - waypoint --------------------------------------
+  // MRS - waypoint --------------------------------------
   srv.request.header.stamp = ros::Time::now();
   srv.request.header.frame_id = _uav_name_ + "/" + "gps_origin";
   srv.request.reference.position.x = go_to[0];
@@ -749,8 +749,7 @@ void Optimiser::callbackTimerPublishGoal([[maybe_unused]] const ros::TimerEvent&
   {
       ROS_INFO("[moving] OFF");
   }
-  ROS_INFO("\n");
-  
+  ROS_INFO("\n");  
 }
 //}
 // | --------------------- triggers -------------------- |

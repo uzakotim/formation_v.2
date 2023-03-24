@@ -7,6 +7,8 @@
 #include <mrs_lib/param_loader.h>
 #include <mrs_lib/transformer.h>
 #include <std_srvs/Trigger.h>
+#include <stdlib.h>
+#include <string.h>
 
 
 namespace mode_commander
@@ -69,6 +71,10 @@ namespace mode_commander
         ros::ServiceClient client_decrease_radius_uav2 = private_nh.serviceClient<std_srvs::Trigger>("/"+_uav_name_2+"/decrease_radius");
         ros::ServiceClient client_decrease_radius_uav3 = private_nh.serviceClient<std_srvs::Trigger>("/"+_uav_name_3+"/decrease_radius");
 
+        ros::ServiceClient client_stop_uav1 = private_nh.serviceClient<std_srvs::Trigger>("/"+_uav_name_1+"/stop");
+        ros::ServiceClient client_stop_uav2 = private_nh.serviceClient<std_srvs::Trigger>("/"+_uav_name_2+"/stop");
+        ros::ServiceClient client_stop_uav3 = private_nh.serviceClient<std_srvs::Trigger>("/"+_uav_name_3+"/stop");
+        
         std_srvs::Trigger srv1;
         std_srvs::Trigger srv2;
         std_srvs::Trigger srv3;
@@ -88,6 +94,10 @@ namespace mode_commander
         std_srvs::Trigger dec1;
         std_srvs::Trigger dec2;
         std_srvs::Trigger dec3;
+        
+        std_srvs::Trigger stp1;
+        std_srvs::Trigger stp2;
+        std_srvs::Trigger stp3;
 
         while(ros::ok())
         {
@@ -237,7 +247,10 @@ namespace mode_commander
             }
             else if (c == 'q')
             {
-                break;
+                if (system("rosnode kill -a")==0)
+                {   
+                    break;
+                }
             }
             ros::Duration(0.001).sleep();
         }
