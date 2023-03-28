@@ -15,3 +15,6 @@ memory_size: 20  #how many centroids to store, how fast centroids will be update
 rate:
   publish: 25 # [Hz] how often to publish my topic?
   check_subscribers: 1 # [Hz] how often check whether msgs are arriving?
+kalman:
+  q: 0.1 
+  r: 5.0 

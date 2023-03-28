@@ -111,6 +111,8 @@ private:
   std::string _uav_name_1_;
   std::string _uav_name_2_;
   int memory_size_ = 0;
+  double w_q;
+  double w_r;
   // | --------------------- MRS transformer -------------------- |
 
   std::unique_ptr<mrs_lib::Transformer> transformer_;
@@ -200,8 +202,6 @@ private:
   Matrix6x6d new_cov_1;
   Matrix6x6d new_cov_2;
   Matrix6x6d new_cov_3;
-  double w_q = 0.1;
-  double w_r = 5.0;
 
   int neigh1_angle {-1};
   int neigh2_angle {-1};
@@ -249,6 +249,8 @@ void SensFuse::onInit() {
   param_loader.loadParam("world_point/z", world_point_z_);
   param_loader.loadParam("formation_circle/radius_threshold", radius_threshold);
   param_loader.loadParam("memory_size", memory_size_);
+  param_loader.loadParam("kalman/q", w_q);
+  param_loader.loadParam("kalman/r", w_r);
 
   if (!param_loader.loadedSuccessfully()) {
     ROS_ERROR("[WaypointFlier]: failed to load non-optional parameters!");
