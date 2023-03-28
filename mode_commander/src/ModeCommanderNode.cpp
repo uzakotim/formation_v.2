@@ -52,7 +52,7 @@ namespace mode_commander
             ros::shutdown();
         }
         
-        ROS_INFO_STREAM("CONTROLLER GUIDE: \n"<<"press r for recording/not_recording centroid between drones\n"<<"press 1 for moving/stopping "<<_uav_name_1<<'\n'<<"press 2 for moving/stopping "<<_uav_name_2<<'\n'<<"press 3 for moving/stopping "<<_uav_name_3<<"\n"<<"press s to switch mode: searching/form_formation\n"<<"press 9 to decrease radius\n"<<"press 0 to increase radius\n"<<"press q to exit\n");
+        ROS_INFO_STREAM("CONTROLLER GUIDE: \n"<<"press r for recording/not_recording centroid between drones\n"<<"press 1 for moving/stopping "<<_uav_name_1<<'\n'<<"press 2 for moving/stopping "<<_uav_name_2<<'\n'<<"press 3 for moving/stopping "<<_uav_name_3<<"\n"<<"press s to switch mode: searching/form_formation\n"<<"press 9 to decrease radius\n"<<"press 0 to increase radius\n"<<"press i to ignore observations\n"<<"press q to exit\n");
         
         ros::ServiceClient client_uav1 = private_nh.serviceClient<std_srvs::Trigger>("/"+_uav_name_1 +"/trigger_motion");
         ros::ServiceClient client_uav2 = private_nh.serviceClient<std_srvs::Trigger>("/"+_uav_name_2 +"/trigger_motion");
@@ -61,6 +61,10 @@ namespace mode_commander
         ros::ServiceClient client_mode_uav1 = private_nh.serviceClient<std_srvs::Trigger>("/"+_uav_name_1+"/trigger_mode");
         ros::ServiceClient client_mode_uav2 = private_nh.serviceClient<std_srvs::Trigger>("/"+_uav_name_2+"/trigger_mode");
         ros::ServiceClient client_mode_uav3 = private_nh.serviceClient<std_srvs::Trigger>("/"+_uav_name_3+"/trigger_mode");
+
+        ros::ServiceClient ignore_mode_uav1 = private_nh.serviceClient<std_srvs::Trigger>("/"+_uav_name_1+"/trigger_ignore");
+        ros::ServiceClient ignore_mode_uav2 = private_nh.serviceClient<std_srvs::Trigger>("/"+_uav_name_2+"/trigger_ignore");
+        ros::ServiceClient ignore_mode_uav3 = private_nh.serviceClient<std_srvs::Trigger>("/"+_uav_name_3+"/trigger_ignore");
 
         ros::ServiceClient client_rec_uav1 = private_nh.serviceClient<std_srvs::Trigger>("/"+_uav_name_1+"/record_centroid");
         ros::ServiceClient client_rec_uav2 = private_nh.serviceClient<std_srvs::Trigger>("/"+_uav_name_2+"/record_centroid");
@@ -94,6 +98,10 @@ namespace mode_commander
         std_srvs::Trigger dec1;
         std_srvs::Trigger dec2;
         std_srvs::Trigger dec3;
+        
+        std_srvs::Trigger ign1;
+        std_srvs::Trigger ign2;
+        std_srvs::Trigger ign3;
         
 
         while(ros::ok())
@@ -157,6 +165,33 @@ namespace mode_commander
                 else
                 {
                     ROS_ERROR("Failed to call select service uav3");
+                }
+            }
+            else if((c=='i')||(c == 'I'))
+            {
+                if (ignore_mode_uav1.call(ign1))
+                {
+                    ROS_INFO("Successfully sent ignore request uav1");
+                }
+                else
+                {
+                    ROS_ERROR("Failed to call ignore service uav1");
+                }
+                if (ignore_mode_uav2.call(ign2))
+                {
+                    ROS_INFO("Successfully sent ignore request uav2");
+                }
+                else
+                {
+                    ROS_ERROR("Failed to call ignore service uav2");
+                }
+                if (ignore_mode_uav3.call(ign3))
+                {
+                    ROS_INFO("Successfully sent ignore request uav3");
+                }
+                else
+                {
+                    ROS_ERROR("Failed to call ignore service uav3");
                 }
             }
             else if ((c=='r')||(c=='R'))

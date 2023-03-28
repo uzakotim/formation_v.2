@@ -69,3 +69,5 @@ services:
     type: std_srvs/Trigger
   - name: "decrease_radius"
     type: std_srvs/Trigger
+  - name: "trigger_ignore"
+    type: std_srvs/Trigger

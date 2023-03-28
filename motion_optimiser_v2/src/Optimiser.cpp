@@ -90,6 +90,7 @@ public:
   /* flags */
   std::atomic<bool> allow_motion_   = false;
   std::atomic<bool> select_mode_    = false;
+  std::atomic<bool> ignore_mode_    = true;
   std::atomic<bool> record_centroid_= false;
 
 private:
@@ -196,6 +197,7 @@ private:
   // ------------------------------------------------------------|
   ros::ServiceServer service_motion_;
   ros::ServiceServer service_mode_;
+  ros::ServiceServer service_ignore_;
   ros::ServiceServer service_rec_;
   ros::ServiceServer service_increase_radius_;
   ros::ServiceServer service_decrease_radius_;
@@ -254,6 +256,7 @@ private:
   bool callback_trigger_rec(std_srvs::Trigger::Request  &req, std_srvs::Trigger::Response &res);
   bool callback_trigger_increase_radius(std_srvs::Trigger::Request  &req, std_srvs::Trigger::Response &res);
   bool callback_trigger_decrease_radius(std_srvs::Trigger::Request  &req, std_srvs::Trigger::Response &res);
+  bool callback_trigger_ignore(std_srvs::Trigger::Request  &req, std_srvs::Trigger::Response &res);
   
 };
 
@@ -354,11 +357,13 @@ void Optimiser::onInit() {
   std::string trigger_rec = "/" +_uav_name_ +"/record_centroid";
   std::string trigger_increase_radius = "/" +_uav_name_ +"/increase_radius";
   std::string trigger_decrease_radius = "/" +_uav_name_ +"/decrease_radius";
+  std::string trigger_ignore = "/" +_uav_name_ +"/trigger_ignore";
   service_motion_ = nh.advertiseService(trigger_motion, &Optimiser::callback_trigger_motion,this);
   service_mode_   = nh.advertiseService(trigger_mode, &Optimiser::callback_trigger_mode,this);
   service_rec_    = nh.advertiseService(trigger_rec, &Optimiser::callback_trigger_rec,this);
   service_increase_radius_   = nh.advertiseService(trigger_increase_radius, &Optimiser::callback_trigger_increase_radius,this);
   service_decrease_radius_   = nh.advertiseService(trigger_decrease_radius, &Optimiser::callback_trigger_decrease_radius,this);
+  service_ignore_    = nh.advertiseService(trigger_ignore, &Optimiser::callback_trigger_ignore,this);
   ROS_INFO_STREAM("commander service ok");
   // ------------------------------------------------------------|
 
@@ -740,17 +745,26 @@ void Optimiser::callbackTimerPublishGoal([[maybe_unused]] const ros::TimerEvent&
     offset_x = max_radius*std::cos(offset_angle_);
     offset_y = max_radius*std::sin(offset_angle_);
     
-    if ((centroid_x == -10000000000.0) && (centroid_y == -10000000000.0) && (centroid_z == -10000000000.0))
+  
+    if (ignore_mode_)
+    {
+      ROS_INFO("[IGNORE] ON");
+    }
+    else
+    {
+      ROS_INFO("[IGNORE] OFF");
+
+    }
+    if (((centroid_x == -10000000000.0) && (centroid_y == -10000000000.0) && (centroid_z == -10000000000.0))||ignore_mode_)
     {
       // if blob detections are empty -> then 
       ROS_INFO("[NO OBJECTS DETECTED]");
       goal = (cv::Mat_<double>(2,1) << avg_x + offset_x,avg_y + offset_y);
     }else
     {
-      ROS_INFO("[OBJECT DETECTED]");
-      goal = (cv::Mat_<double>(2,1) << centroid_x,centroid_y);
+        ROS_INFO("[OBJECT DETECTED]");
+        goal = (cv::Mat_<double>(2,1) << centroid_x,centroid_y);
     }
-    
     go_to = Optimiser::calculateFormation(state,state_neigh1,state_neigh2,goal);
 
     double angle_to_send = searching_circle_angle + omega;
@@ -799,6 +813,15 @@ bool Optimiser::callback_trigger_motion(std_srvs::Trigger::Request  &req, std_sr
     }
     // ROS_INFO_STREAM("!recceved allow motion");
     allow_motion_ = !allow_motion_;
+    return true;
+}
+bool Optimiser::callback_trigger_ignore(std_srvs::Trigger::Request  &req, std_srvs::Trigger::Response &res)
+{
+    if (!is_initialized_) {
+      return false;
+    }
+    // ROS_INFO_STREAM("!recceved select mode");
+    ignore_mode_ = !ignore_mode_;
     return true;
 }
 bool Optimiser::callback_trigger_mode(std_srvs::Trigger::Request  &req, std_srvs::Trigger::Response &res)
