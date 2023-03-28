@@ -186,6 +186,7 @@ private:
   ros::Publisher             pub_test_;
   ros::Publisher             pub_points_;
   ros::Publisher             pub_goal_;
+  ros::Publisher             pub_centroid_;
   int                        _rate_timer_publish_;
 
   // ------------------------------------------------------------|
@@ -272,8 +273,8 @@ void SensFuse::onInit() {
   ROS_INFO_STREAM("points_own_in");
   
 
-  sub_odom_own_ = nh.subscribe("odometry_own_in", 1,  &SensFuse::callbackODOM,this);
-  sub_points_own_ = nh.subscribe("points_own_in", 1,  &SensFuse::callbackROBOT,this);
+  sub_odom_own_      = nh.subscribe("odometry_own_in",  1,  &SensFuse::callbackODOM,this);
+  sub_points_own_    = nh.subscribe("points_own_in",    1,  &SensFuse::callbackROBOT,this);
   sub_points_neigh1_ = nh.subscribe("points_neigh1_in", 1,  &SensFuse::callbackNEIGH1,this);
   sub_points_neigh2_ = nh.subscribe("points_neigh2_in", 1,  &SensFuse::callbackNEIGH2,this);
   
@@ -285,6 +286,7 @@ void SensFuse::onInit() {
   // | ------------------ initialize publishers ----------------- |
   pub_test_       = nh.advertise<std_msgs::UInt64>("test_publisher", 1);
   pub_goal_       = nh.advertise<geometry_msgs::PoseWithCovarianceStamped>("goal", 1);
+  pub_centroid_   = nh.advertise<geometry_msgs::PoseWithCovarianceStamped>("centroid", 1);
   ROS_INFO_STREAM("pubs ok");
   // | -------------------- initialize timers ------------------- |
   timer_check_subscribers_ = nh.createTimer(ros::Rate(_rate_timer_check_subscribers_), &SensFuse::callbackTimerCheckSubscribers, this);
@@ -391,6 +393,7 @@ void SensFuse::callbackROBOT(const mrs_msgs::PoseWithCovarianceArrayStampedConst
 
   std::vector<double> all_x,all_y,all_z;
  
+  geometry_msgs::PoseWithCovarianceStamped own_centroid_out_msg;
   
   if (points_own->poses.size() > 0)
   {
@@ -414,6 +417,12 @@ void SensFuse::callbackROBOT(const mrs_msgs::PoseWithCovarianceArrayStampedConst
       center3D_1.x = new_x_1(0);
       center3D_1.y = new_x_1(1);
       center3D_1.z = new_x_1(2);
+      
+      //TODO: make msg of center 3d here
+      own_centroid_out_msg.pose.pose.position.x = center3D_1.x;
+      own_centroid_out_msg.pose.pose.position.y = center3D_1.y;
+      own_centroid_out_msg.pose.pose.position.z = center3D_1.z;
+
 
       if (points_own->poses.size() > 0)
       {
@@ -453,6 +462,17 @@ void SensFuse::callbackROBOT(const mrs_msgs::PoseWithCovarianceArrayStampedConst
         mutex_centroids.unlock();
       }
   }
+  else
+  {
+    //make empty msg
+    own_centroid_out_msg.pose.pose.position.x = -10000000000;
+    own_centroid_out_msg.pose.pose.position.y = -10000000000;
+    own_centroid_out_msg.pose.pose.position.z = -10000000000;
+  } 
+  //send own centroid
+  own_centroid_out_msg.header.frame_id = _uav_name_ + "/" + "gps_origin";
+  own_centroid_out_msg.header.stamp = ros::Time::now();
+  pub_centroid_.publish(own_centroid_out_msg);
   ros::Duration(0.01).sleep();
 }
 

@@ -27,6 +27,9 @@ topics: # topics published out of this machine to receivers specified above
  - name: "sensor_fusion_v2/goal"
    compress: true # enable bz2 compression
    rate: 1.0
+ - name: "sensor_fusion_v2/centroid"
+   compress: true # enable bz2 compression
+   rate: 1.0
  - name: "motion_optimiser_v2/angle"
    compress: true # enable bz2 compression
    rate: 1.0

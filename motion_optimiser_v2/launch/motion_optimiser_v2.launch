@@ -53,6 +53,7 @@
       <remap from="~points_neigh1_in" to="/$(arg NEIGH_NAME_1)/blob_det_v2/points" />
       <remap from="~points_neigh2_in" to="/$(arg NEIGH_NAME_2)/blob_det_v2/points" />
       <remap from="~goal_in" to="/$(arg UAV_NAME)/sensor_fusion_v2/goal" />
+      <remap from="~centroid_in" to="/$(arg UAV_NAME)/sensor_fusion_v2/centroid" />
       <remap from="~angle_in_1" to="/$(arg NEIGH_NAME_1)/motion_optimiser_v2/angle" />
       <remap from="~angle_in_2" to="/$(arg NEIGH_NAME_2)/motion_optimiser_v2/angle" />
 

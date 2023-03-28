@@ -78,7 +78,6 @@ class Optimiser : public nodelet::Nodelet {
 public:
   /* onInit() is called when nodelet is launched (similar to main() in regular node) */
   virtual void onInit();
-  boost::array<float,4> goal = {0.0, 0.0, 0.0, 0.0};
   ros::ServiceClient client;
   mrs_msgs::ReferenceStampedSrv srv;
   std::mutex mutex_counters_opti;           // to prevent data races when accessing the following variables from multiple threads
@@ -87,6 +86,7 @@ public:
   std::mutex mutex_odom_2;           // to prevent data races when accessing the following variables from multiple threads
   std::mutex mutex_odom_3;           // to prevent data races when accessing the following variables from multiple threads
   std::mutex mutex_goal;           // to prevent data races when accessing the following variables from multiple threads
+  std::mutex mutex_centroid;           // to prevent data races when accessing the following variables from multiple threads
   /* flags */
   std::atomic<bool> allow_motion_   = false;
   std::atomic<bool> select_mode_    = false;
@@ -101,6 +101,7 @@ private:
   std::atomic<bool> got_odometry_3              = false;  // indicates whether at least one image message was received
   
   std::atomic<bool> got_goal                    = false;  // indicates whether at least one image message was received
+  std::atomic<bool> got_centroid                = false;  // indicates whether at least one image message was received
   
   std::atomic<bool> got_angle1                  = false;  // indicates whether at least one image message was received
   std::atomic<bool> got_angle2                  = false;  // indicates whether at least one image message was received
@@ -132,10 +133,11 @@ private:
   // | ---------------------- msg callbacks --------------------- |
 
   // void callbackImage(const sensor_msgs::ImageConstPtr& msg);
-  void  callbackROBOT(const nav_msgs::OdometryConstPtr& odom);
-  void  callbackODOM1(const nav_msgs::OdometryConstPtr& odom);
-  void  callbackODOM2(const nav_msgs::OdometryConstPtr& odom);
-  void  callbackGOAL(const geometry_msgs::PoseWithCovarianceStampedConstPtr& goal_msg);
+  void  callbackROBOT   (const nav_msgs::OdometryConstPtr& odom);
+  void  callbackODOM1   (const nav_msgs::OdometryConstPtr& odom);
+  void  callbackODOM2   (const nav_msgs::OdometryConstPtr& odom);
+  void  callbackGOAL    (const geometry_msgs::PoseWithCovarianceStampedConstPtr& goal_msg);
+  void  callbackCENTROID(const geometry_msgs::PoseWithCovarianceStampedConstPtr& centroid_msg);
 
   void  callbackANGLE1(const std_msgs::Int8ConstPtr& msg);
   void  callbackANGLE2(const std_msgs::Int8ConstPtr& msg);
@@ -148,6 +150,7 @@ private:
   ros::Subscriber sub_odom_neigh2_;
   // ros::Subscriber sub_heading_;
   ros::Subscriber sub_goal_;
+  ros::Subscriber sub_centroid_;
   
   ros::Subscriber sub_angle_1_;
   ros::Subscriber sub_angle_2_;
@@ -235,7 +238,9 @@ private:
   _Float64 neigh2_search_angle {0};
   // | --------------------- coordinates ------------------------ |
   
-  double own_x{-10000000000.0},own_y{-10000000000.0}, neigh1_x{-10000000000.0}, neigh1_y{-10000000000.0}, neigh2_x{-10000000000.0},neigh2_y{-10000000000.0},goal_x{-10000000000.0},goal_y{-10000000000.0},goal_z{-10000000000.0};
+  double own_x{-10000000000.0},own_y{-10000000000.0}, neigh1_x{-10000000000.0}, neigh1_y{-10000000000.0}, neigh2_x{-10000000000.0},neigh2_y{-10000000000.0};
+  double goal_x{-10000000000.0},goal_y{-10000000000.0},goal_z{-10000000000.0};
+  double centroid_x{-10000000000.0},centroid_y{-10000000000.0},centroid_z{-10000000000.0};
 
   // | --------------------- other functions -------------------- |
   void publishImageNumber(uint64_t count);
@@ -265,6 +270,7 @@ void Optimiser::onInit() {
   got_odometry_2          = false;  // indicates whether at least one image message was received
   got_odometry_3          = false;  // indicates whether at least one image message was received
   got_goal                = false;  // indicates whether at least one image message was received
+  got_centroid            = false;  // indicates whether at least one image message was received
 
   got_angle1              = false;  // indicates whether at least one image message was received
   got_angle2              = false;  // indicates whether at least one image message was received
@@ -319,7 +325,8 @@ void Optimiser::onInit() {
   sub_odom_own_ = nh.subscribe("odometry_own_in", 1,  &Optimiser::callbackROBOT,this);
   sub_odom_neigh1_ = nh.subscribe("odometry_neigh1_in", 1,  &Optimiser::callbackODOM1,this);
   sub_odom_neigh2_ = nh.subscribe("odometry_neigh2_in", 1,  &Optimiser::callbackODOM2,this);
-  sub_goal_ = nh.subscribe("goal_in", 1,  &Optimiser::callbackGOAL,this);
+  sub_goal_     = nh.subscribe("goal_in", 1,  &Optimiser::callbackGOAL,this);
+  sub_centroid_ = nh.subscribe("centroid_in", 1,  &Optimiser::callbackCENTROID,this);
   
   sub_angle_1_ = nh.subscribe("angle_in_1", 1,  &Optimiser::callbackANGLE1,this);
   sub_angle_2_ = nh.subscribe("angle_in_2", 1,  &Optimiser::callbackANGLE2,this);
@@ -521,6 +528,29 @@ void Optimiser::callbackGOAL(const geometry_msgs::PoseWithCovarianceStampedConst
   /* output a text about it */
   // ROS_INFO_THROTTLE(1, "[Optimiser]: Total of %u messages synchronised so far", (unsigned int)msg_counter_);
 }
+/* callbackROBOT() method //{ */
+
+void Optimiser::callbackCENTROID(const geometry_msgs::PoseWithCovarianceStampedConstPtr& centroid_msg){
+
+  if (!is_initialized_) {
+    return;
+  }
+  // ROS_INFO("Slept for %lf secs", dt);
+  /* update the checks-related variables (in a thread-safe manner) */
+  {
+    std::scoped_lock lock(mutex_counters_opti);
+    got_centroid      = true;  // indicates whether at least one image message was received
+  }
+  mutex_centroid.lock();
+  centroid_x = (double)(centroid_msg->pose.pose.position.x);
+  centroid_y = (double)(centroid_msg->pose.pose.position.y);
+  centroid_z = (double)(centroid_msg->pose.pose.position.z); 
+  mutex_centroid.unlock();
+  // ROS_INFO_STREAM("[goal position] x: "<<goal_x<<" y: "<<goal_y);
+  //---------------------------------------------------------------
+  /* output a text about it */
+  // ROS_INFO_THROTTLE(1, "[Optimiser]: Total of %u messages synchronised so far", (unsigned int)msg_counter_);
+}
 
 //}
 
@@ -628,7 +658,6 @@ void Optimiser::callbackTimerPublishGoal([[maybe_unused]] const ros::TimerEvent&
   } 
   else 
   {
-    ROS_INFO("[mode] search");
     // searching_circle_angle += omega*dt;
     if (own_search_angle >= 2.0*M_PI)
     {
@@ -711,7 +740,17 @@ void Optimiser::callbackTimerPublishGoal([[maybe_unused]] const ros::TimerEvent&
     offset_x = max_radius*std::cos(offset_angle_);
     offset_y = max_radius*std::sin(offset_angle_);
     
-    goal = (cv::Mat_<double>(2,1) << avg_x + offset_x,avg_y + offset_y);
+    if ((centroid_x == -10000000000.0) && (centroid_y == -10000000000.0) && (centroid_z == -10000000000.0))
+    {
+      // if blob detections are empty -> then 
+      ROS_INFO("[NO OBJECTS DETECTED]");
+      goal = (cv::Mat_<double>(2,1) << avg_x + offset_x,avg_y + offset_y);
+    }else
+    {
+      ROS_INFO("[OBJECT DETECTED]");
+      goal = (cv::Mat_<double>(2,1) << centroid_x,centroid_y);
+    }
+    
     go_to = Optimiser::calculateFormation(state,state_neigh1,state_neigh2,goal);
 
     double angle_to_send = searching_circle_angle + omega;
@@ -722,7 +761,7 @@ void Optimiser::callbackTimerPublishGoal([[maybe_unused]] const ros::TimerEvent&
     
     std_msgs::Float64 msg_angle;
     msg_angle.data = static_cast<_Float64>(angle_to_send);
-    ROS_INFO_STREAM("[future angle] "<<msg_angle.data);
+    // ROS_INFO_STREAM("[future angle] "<<msg_angle.data);
     pub_search_angle_.publish(msg_angle);
   }
   ROS_INFO_STREAM("[own angle] "<<own_angle);
