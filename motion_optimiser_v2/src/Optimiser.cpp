@@ -606,7 +606,7 @@ void Optimiser::callbackTimerPublishGoal([[maybe_unused]] const ros::TimerEvent&
   {
     return;
   }
-  if ((neigh1_x == -10000000000.0) || (neigh1_y == -10000000000.0))
+  if ((neigh1_x == -10000000000.0) || (neigh1_y ==-10000000000.0))
   {
     mutex_odom_2.lock();
     neigh1_x = own_x;
@@ -630,13 +630,13 @@ void Optimiser::callbackTimerPublishGoal([[maybe_unused]] const ros::TimerEvent&
   
   if(record_centroid_)
   { 
-    ROS_INFO("[recording centroid] ON");
+    ROS_INFO("[RECORDING CENTROID] ON");
     searching_circle_center_x = (own_x+neigh1_x+neigh2_x)/3.0;
     searching_circle_center_y = (own_y+neigh1_y+neigh2_y)/3.0;
   }
   else
   {
-    ROS_INFO("[recording centroid] OFF");
+    ROS_INFO("[RECORDING CENTROID] OFF");
   }
 
   std::vector<double> go_to {0,0};
@@ -649,7 +649,7 @@ void Optimiser::callbackTimerPublishGoal([[maybe_unused]] const ros::TimerEvent&
 
   if (select_mode_) 
   {
-    ROS_INFO("[mode] form formation");
+    ROS_INFO("[FORM FORMATION]");
     if ((goal.at<double>(0) != -10000000000) || ((goal.at<double>(1) != -10000000000))){
       go_to = Optimiser::calculateFormation(state,state_neigh1,state_neigh2,goal);
       ROS_INFO_STREAM("[goto] x: "<<go_to[0]<<" y: "<<go_to[1]);
@@ -663,6 +663,8 @@ void Optimiser::callbackTimerPublishGoal([[maybe_unused]] const ros::TimerEvent&
   } 
   else 
   {
+    ROS_INFO("[SEARCHING]");
+
     // searching_circle_angle += omega*dt;
     if (own_search_angle >= 2.0*M_PI)
     {
@@ -746,15 +748,7 @@ void Optimiser::callbackTimerPublishGoal([[maybe_unused]] const ros::TimerEvent&
     offset_y = max_radius*std::sin(offset_angle_);
     
   
-    if (ignore_mode_)
-    {
-      ROS_INFO("[IGNORE] ON");
-    }
-    else
-    {
-      ROS_INFO("[IGNORE] OFF");
-
-    }
+    
     if (((centroid_x == -10000000000.0) && (centroid_y == -10000000000.0) && (centroid_z == -10000000000.0))||ignore_mode_)
     {
       // if blob detections are empty -> then 
@@ -778,6 +772,14 @@ void Optimiser::callbackTimerPublishGoal([[maybe_unused]] const ros::TimerEvent&
     // ROS_INFO_STREAM("[future angle] "<<msg_angle.data);
     pub_search_angle_.publish(msg_angle);
   }
+  if (ignore_mode_)
+  {
+    ROS_INFO("[IGNORE] ON");
+  }
+  else
+  {
+    ROS_INFO("[IGNORE] OFF");
+  }
   ROS_INFO_STREAM("[own angle] "<<own_angle);
   // MRS - waypoint --------------------------------------
   srv.request.header.stamp = ros::Time::now();
@@ -788,7 +790,7 @@ void Optimiser::callbackTimerPublishGoal([[maybe_unused]] const ros::TimerEvent&
   // srv.request.reference.heading    = -0.1; 
 
   if (allow_motion_){
-      ROS_INFO("[moving] ON");
+      ROS_INFO("[MOVING] ON");
       if (client.call(srv))
       {
           ROS_INFO("[successfull calling service]");
@@ -800,7 +802,7 @@ void Optimiser::callbackTimerPublishGoal([[maybe_unused]] const ros::TimerEvent&
   }
   else
   {
-      ROS_INFO("[moving] OFF");
+      ROS_INFO("[MOVING] OFF");
   }
   ROS_INFO("\n");  
 }

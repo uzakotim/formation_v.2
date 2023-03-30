@@ -52,7 +52,11 @@ namespace mode_commander
             ros::shutdown();
         }
         
-        ROS_INFO_STREAM("CONTROLLER GUIDE: \n"<<"press r for recording/not_recording centroid between drones\n"<<"press 1 for moving/stopping "<<_uav_name_1<<'\n'<<"press 2 for moving/stopping "<<_uav_name_2<<'\n'<<"press 3 for moving/stopping "<<_uav_name_3<<"\n"<<"press s to switch mode: searching/form_formation\n"<<"press 9 to decrease radius\n"<<"press 0 to increase radius\n"<<"press i to ignore observations\n"<<"press q to exit\n");
+        ROS_INFO_STREAM("CONTROLLER GUIDE: \n");
+        ROS_WARN("!Make sure that drones communicate and the centroid has been recorded!");
+        ROS_WARN("!Be aware to turn IGNORE ON when returning to searching mode!");
+        ROS_WARN("!Be aware to turn RECORDING_CENTROID OFF BEFORE setting MOVING ON!");
+        ROS_INFO_STREAM("\npress r for recording/not_recording centroid between drones\n"<<"press 1 for moving/stopping "<<_uav_name_1<<'\n'<<"press 2 for moving/stopping "<<_uav_name_2<<'\n'<<"press 3 for moving/stopping "<<_uav_name_3<<"\n"<<"press s to switch mode: searching/form_formation\n"<<"press 9 to decrease radius\n"<<"press 0 to increase radius\n"<<"press i to switch ignore mode\n"<<"when ignore is on: drones do not separate\n"<<"when ignore is off: each drone stops at observations\n"<<"press q to exit\n");
         
         ros::ServiceClient client_uav1 = private_nh.serviceClient<std_srvs::Trigger>("/"+_uav_name_1 +"/trigger_motion");
         ros::ServiceClient client_uav2 = private_nh.serviceClient<std_srvs::Trigger>("/"+_uav_name_2 +"/trigger_motion");
@@ -298,6 +302,7 @@ namespace mode_commander
                     ROS_ERROR("Failed to stop motion optimiser");
                 }
             }
+            ROS_INFO("\n");  
             ros::Duration(0.001).sleep();
         }
         ros::shutdown();
