@@ -10,7 +10,7 @@ world_point:
   z: 0.0
 search_circle_omega:
   # delta angle in radians
-  delta: 0.0444444444
+  delta: 0.022222222
   radius: 3.0
 search_circle:
   formation_radius: 4.0
