@@ -17,6 +17,8 @@ search_circle:
   big_circle_radius: 3.0
   maximal_big_circle_radius: 20.0
   minimal_big_circle_radius: 1.0
+optimisation:
+  steps: 25
 rate:
   # how often to publish my topic?
   publish: 5 # [Hz]

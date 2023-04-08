@@ -218,7 +218,7 @@ private:
   std::vector<double> delta {0.5,0.5};
   std::vector<double> delta_prev {0.5,0.5};
 
-  size_t k{25};  //computing steps
+  int k;  //computing steps 25
   
   cv::Mat w_prev = (cv::Mat_<double>(2,1) <<  0,0);
   
@@ -305,7 +305,8 @@ void Optimiser::onInit() {
   param_loader.loadParam("search_circle/big_circle_radius", searching_circle_radius);
   param_loader.loadParam("search_circle/maximal_big_circle_radius", maximal_searching_circle_radius);
   param_loader.loadParam("search_circle/minimal_big_circle_radius", minimal_searching_circle_radius);
-
+  param_loader.loadParam("optimisation/steps", k);
+  
   if (!param_loader.loadedSuccessfully()) {
     ROS_ERROR("[WaypointFlier]: failed to load non-optional parameters!");
     ros::shutdown();
