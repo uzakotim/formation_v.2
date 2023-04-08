@@ -56,7 +56,7 @@ namespace mode_commander
         ROS_WARN("!Make sure that drones communicate and the centroid has been recorded!");
         ROS_WARN("!Be aware to turn IGNORE ON when returning to searching mode!");
         ROS_WARN("!Be aware to turn RECORDING_CENTROID OFF BEFORE setting MOVING ON!");
-        ROS_INFO_STREAM("\npress r for recording/not_recording centroid between drones\n"<<"use w,a,s,d for moving formation in 4 directions\n"<<"press 1 for moving/stopping "<<_uav_name_1<<'\n'<<"press 2 for moving/stopping "<<_uav_name_2<<'\n'<<"press 3 for moving/stopping "<<_uav_name_3<<"\n"<<"press m to switch mode: searching/form_formation\n"<<"press 9 to decrease radius\n"<<"press 0 to increase radius\n"<<"press i to switch ignore mode\n"<<"when ignore is on: drones do not separate\n"<<"when ignore is off: each drone stops at observations\n"<<"press q to exit\n");
+        ROS_INFO_STREAM("\npress r for recording/not_recording centroid between drones\n"<<"use w,a,s,d for moving formation in 4 directions\n"<<"press c to enable/disable automatic searching\n"<<"press 1 for moving/stopping "<<_uav_name_1<<'\n'<<"press 2 for moving/stopping "<<_uav_name_2<<'\n'<<"press 3 for moving/stopping "<<_uav_name_3<<"\n"<<"press m to switch mode: searching/form_formation\n"<<"press 9 to decrease radius\n"<<"press 0 to increase radius\n"<<"press i to switch ignore mode\n"<<"when ignore is on: drones do not separate\n"<<"when ignore is off: each drone stops at observations\n"<<"press q to exit\n");
         
         ros::ServiceClient client_uav1 = private_nh.serviceClient<std_srvs::Trigger>("/"+_uav_name_1 +"/trigger_motion");
         ros::ServiceClient client_uav2 = private_nh.serviceClient<std_srvs::Trigger>("/"+_uav_name_2 +"/trigger_motion");
@@ -98,6 +98,10 @@ namespace mode_commander
         ros::ServiceClient client_decrease_y_uav2 = private_nh.serviceClient<std_srvs::Trigger>("/"+_uav_name_2+"/trigger_decrease_y");
         ros::ServiceClient client_decrease_y_uav3 = private_nh.serviceClient<std_srvs::Trigger>("/"+_uav_name_3+"/trigger_decrease_y");
         
+        ros::ServiceClient client_automatic_control_uav1 = private_nh.serviceClient<std_srvs::Trigger>("/"+_uav_name_1+"/trigger_automatic_control");
+        ros::ServiceClient client_automatic_control_uav2 = private_nh.serviceClient<std_srvs::Trigger>("/"+_uav_name_2+"/trigger_automatic_control");
+        ros::ServiceClient client_automatic_control_uav3 = private_nh.serviceClient<std_srvs::Trigger>("/"+_uav_name_3+"/trigger_automatic_control");
+        
         std_srvs::Trigger srv1;
         std_srvs::Trigger srv2;
         std_srvs::Trigger srv3;
@@ -137,6 +141,10 @@ namespace mode_commander
         std_srvs::Trigger yminus1;
         std_srvs::Trigger yminus2;
         std_srvs::Trigger yminus3;
+        
+        std_srvs::Trigger auto1;
+        std_srvs::Trigger auto2;
+        std_srvs::Trigger auto3;
         
         while(ros::ok())
         {
@@ -417,6 +425,33 @@ namespace mode_commander
                 else
                 {
                     ROS_ERROR("Failed to call y minus service uav3");
+                }
+            }
+            else if((c=='c')||(c == 'C'))
+            {
+                if (client_automatic_control_uav1.call(auto1))
+                {
+                    ROS_INFO("Successfully sent auto control request uav1");
+                }
+                else
+                {
+                    ROS_ERROR("Failed to call auto control service uav1");
+                }
+                if (client_automatic_control_uav2.call(auto2))
+                {
+                    ROS_INFO("Successfully sent auto control request uav2");
+                }
+                else
+                {
+                    ROS_ERROR("Failed to call auto control service uav2");
+                }
+                if (client_automatic_control_uav3.call(auto3))
+                {
+                    ROS_INFO("Successfully sent auto control request uav3");
+                }
+                else
+                {
+                    ROS_ERROR("Failed to call auto control service uav3");
                 }
             }
             else if (c == 'q')

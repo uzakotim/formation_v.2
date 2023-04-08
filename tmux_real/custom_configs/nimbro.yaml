@@ -79,3 +79,5 @@ services:
     type: std_srvs/Trigger
   - name: "trigger_decrease_y"
     type: std_srvs/Trigger
+  - name: "trigger_automatic_control"
+    type: std_srvs/Trigger

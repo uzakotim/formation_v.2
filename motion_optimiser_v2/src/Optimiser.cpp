@@ -88,10 +88,11 @@ public:
   std::mutex mutex_goal;           // to prevent data races when accessing the following variables from multiple threads
   std::mutex mutex_centroid;           // to prevent data races when accessing the following variables from multiple threads
   /* flags */
-  std::atomic<bool> allow_motion_   = false;
-  std::atomic<bool> select_mode_    = false;
-  std::atomic<bool> ignore_mode_    = true;
-  std::atomic<bool> record_centroid_= false;
+  std::atomic<bool> allow_motion_     = false;
+  std::atomic<bool> select_mode_      = false;
+  std::atomic<bool> ignore_mode_      = true;
+  std::atomic<bool> record_centroid_  = false;
+  std::atomic<bool> automatic_control_= false;
 
 private:
   /* flags */
@@ -119,6 +120,7 @@ private:
   double maximal_searching_circle_radius;
   double minimal_searching_circle_radius;
   double default_searching_circle_radius;
+  double angle_to_send;
   /* ros parameters */
   double omega;
   double delta_angle;
@@ -205,6 +207,7 @@ private:
   ros::ServiceServer service_decrease_x_;
   ros::ServiceServer service_increase_y_;
   ros::ServiceServer service_decrease_y_;
+  ros::ServiceServer service_automatic_control_;
   // ----------Formation controller parameters--------------
   const double n_pos {1.2};
   const double n_neg {0.5};
@@ -265,6 +268,7 @@ private:
   bool callback_trigger_decrease_x(std_srvs::Trigger::Request  &req, std_srvs::Trigger::Response &res);
   bool callback_trigger_increase_y(std_srvs::Trigger::Request  &req, std_srvs::Trigger::Response &res);
   bool callback_trigger_decrease_y(std_srvs::Trigger::Request  &req, std_srvs::Trigger::Response &res);
+  bool callback_trigger_automatic_control(std_srvs::Trigger::Request  &req, std_srvs::Trigger::Response &res);
   
 };
 
@@ -371,6 +375,7 @@ void Optimiser::onInit() {
   std::string trigger_decrease_x = "/" +_uav_name_ +"/trigger_decrease_x";
   std::string trigger_increase_y = "/" +_uav_name_ +"/trigger_increase_y";
   std::string trigger_decrease_y = "/" +_uav_name_ +"/trigger_decrease_y";
+  std::string trigger_automatic_control = "/" +_uav_name_ +"/trigger_automatic_control";
   service_motion_ = nh.advertiseService(trigger_motion, &Optimiser::callback_trigger_motion,this);
   service_mode_   = nh.advertiseService(trigger_mode, &Optimiser::callback_trigger_mode,this);
   service_rec_    = nh.advertiseService(trigger_rec, &Optimiser::callback_trigger_rec,this);
@@ -381,6 +386,7 @@ void Optimiser::onInit() {
   service_decrease_x_    = nh.advertiseService(trigger_decrease_x, &Optimiser::callback_trigger_decrease_x,this);
   service_increase_y_    = nh.advertiseService(trigger_increase_y, &Optimiser::callback_trigger_increase_y,this);
   service_decrease_y_    = nh.advertiseService(trigger_decrease_y, &Optimiser::callback_trigger_decrease_y,this);
+  service_automatic_control_ = nh.advertiseService(trigger_automatic_control, &Optimiser::callback_trigger_automatic_control,this);
   ROS_INFO_STREAM("commander service ok");
   // ------------------------------------------------------------|
 
@@ -701,27 +707,27 @@ void Optimiser::callbackTimerPublishGoal([[maybe_unused]] const ros::TimerEvent&
     // else
       //  use network
     
-    if ((std::abs(own_search_angle - neigh1_search_angle) > 4.0) && (std::abs(own_search_angle - neigh2_search_angle) <= 4.0))
-    {
-      searching_circle_angle = (1.0/2.0)*(neigh2_search_angle + own_search_angle);
-      own_search_angle = searching_circle_angle;
-      // searching_circle_angle = (1.0/3.0)*(neigh1_search_angle + neigh2_search_angle + own_search_angle);
-    }else if ((std::abs(own_search_angle - neigh1_search_angle) <= 4.0) && (std::abs(own_search_angle - neigh2_search_angle) > 4.0))
-    {
-      searching_circle_angle = (1.0/2.0)*(neigh1_search_angle + own_search_angle);
-      own_search_angle = searching_circle_angle;
-      // searching_circle_angle = (1.0/3.0)*(neigh1_search_angle + neigh2_search_angle + own_search_angle);
-    }
-    else if ((std::abs(own_search_angle - neigh1_search_angle) > 4.0)&& (std::abs(own_search_angle - neigh2_search_angle) > 4.0))
-    {
-      searching_circle_angle = own_search_angle;
-      own_search_angle += omega;
-    }
-    else
-    {
-      searching_circle_angle = (1.0/3.0)*(neigh1_search_angle + neigh2_search_angle + own_search_angle);
-      own_search_angle = searching_circle_angle;
-    }
+    //angle manipulation
+
+      if ((std::abs(own_search_angle - neigh1_search_angle) > 4.0) && (std::abs(own_search_angle - neigh2_search_angle) <= 4.0))
+      {
+        searching_circle_angle = (1.0/2.0)*(neigh2_search_angle + own_search_angle);
+        own_search_angle = searching_circle_angle;
+      }else if ((std::abs(own_search_angle - neigh1_search_angle) <= 4.0) && (std::abs(own_search_angle - neigh2_search_angle) > 4.0))
+      {
+        searching_circle_angle = (1.0/2.0)*(neigh1_search_angle + own_search_angle);
+        own_search_angle = searching_circle_angle;
+      }
+      else if ((std::abs(own_search_angle - neigh1_search_angle) > 4.0)&& (std::abs(own_search_angle - neigh2_search_angle) > 4.0))
+      {
+        searching_circle_angle = own_search_angle; 
+        own_search_angle += omega;
+      }
+      else
+      {
+        searching_circle_angle = (1.0/3.0)*(neigh1_search_angle + neigh2_search_angle + own_search_angle);
+        own_search_angle = searching_circle_angle;
+      }
 
     ROS_INFO_STREAM("[current angle] "<<searching_circle_angle);
     ROS_INFO_STREAM("[circle centroid] x: "<<searching_circle_center_x<<" y: "<<searching_circle_center_y);
@@ -778,7 +784,15 @@ void Optimiser::callbackTimerPublishGoal([[maybe_unused]] const ros::TimerEvent&
     }
     go_to = Optimiser::calculateFormation(state,state_neigh1,state_neigh2,goal);
 
-    double angle_to_send = searching_circle_angle + omega;
+    if(automatic_control_)
+    {
+      angle_to_send = searching_circle_angle + omega;
+    }
+    else
+    {
+      angle_to_send = searching_circle_angle;
+    }
+
     if (angle_to_send >= 2.0*M_PI)
     {
       angle_to_send -= 2.0*M_PI; 
@@ -825,6 +839,15 @@ void Optimiser::callbackTimerPublishGoal([[maybe_unused]] const ros::TimerEvent&
 }
 //}
 // | --------------------- triggers -------------------- |
+bool Optimiser::callback_trigger_automatic_control(std_srvs::Trigger::Request  &req, std_srvs::Trigger::Response &res)
+{
+    if (!is_initialized_) {
+      return false;
+    }
+    automatic_control_ = !automatic_control_;
+    return true;
+}
+
 bool Optimiser::callback_trigger_motion(std_srvs::Trigger::Request  &req, std_srvs::Trigger::Response &res)
 {
     if (!is_initialized_) {
