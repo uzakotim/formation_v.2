@@ -201,6 +201,10 @@ private:
   ros::ServiceServer service_rec_;
   ros::ServiceServer service_increase_radius_;
   ros::ServiceServer service_decrease_radius_;
+  ros::ServiceServer service_increase_x_;
+  ros::ServiceServer service_decrease_x_;
+  ros::ServiceServer service_increase_y_;
+  ros::ServiceServer service_decrease_y_;
   // ----------Formation controller parameters--------------
   const double n_pos {1.2};
   const double n_neg {0.5};
@@ -257,6 +261,10 @@ private:
   bool callback_trigger_increase_radius(std_srvs::Trigger::Request  &req, std_srvs::Trigger::Response &res);
   bool callback_trigger_decrease_radius(std_srvs::Trigger::Request  &req, std_srvs::Trigger::Response &res);
   bool callback_trigger_ignore(std_srvs::Trigger::Request  &req, std_srvs::Trigger::Response &res);
+  bool callback_trigger_increase_x(std_srvs::Trigger::Request  &req, std_srvs::Trigger::Response &res);
+  bool callback_trigger_decrease_x(std_srvs::Trigger::Request  &req, std_srvs::Trigger::Response &res);
+  bool callback_trigger_increase_y(std_srvs::Trigger::Request  &req, std_srvs::Trigger::Response &res);
+  bool callback_trigger_decrease_y(std_srvs::Trigger::Request  &req, std_srvs::Trigger::Response &res);
   
 };
 
@@ -359,12 +367,20 @@ void Optimiser::onInit() {
   std::string trigger_increase_radius = "/" +_uav_name_ +"/increase_radius";
   std::string trigger_decrease_radius = "/" +_uav_name_ +"/decrease_radius";
   std::string trigger_ignore = "/" +_uav_name_ +"/trigger_ignore";
+  std::string trigger_increase_x = "/" +_uav_name_ +"/trigger_increase_x";
+  std::string trigger_decrease_x = "/" +_uav_name_ +"/trigger_decrease_x";
+  std::string trigger_increase_y = "/" +_uav_name_ +"/trigger_increase_y";
+  std::string trigger_decrease_y = "/" +_uav_name_ +"/trigger_decrease_y";
   service_motion_ = nh.advertiseService(trigger_motion, &Optimiser::callback_trigger_motion,this);
   service_mode_   = nh.advertiseService(trigger_mode, &Optimiser::callback_trigger_mode,this);
   service_rec_    = nh.advertiseService(trigger_rec, &Optimiser::callback_trigger_rec,this);
   service_increase_radius_   = nh.advertiseService(trigger_increase_radius, &Optimiser::callback_trigger_increase_radius,this);
   service_decrease_radius_   = nh.advertiseService(trigger_decrease_radius, &Optimiser::callback_trigger_decrease_radius,this);
   service_ignore_    = nh.advertiseService(trigger_ignore, &Optimiser::callback_trigger_ignore,this);
+  service_increase_x_    = nh.advertiseService(trigger_increase_x, &Optimiser::callback_trigger_increase_x,this);
+  service_decrease_x_    = nh.advertiseService(trigger_decrease_x, &Optimiser::callback_trigger_decrease_x,this);
+  service_increase_y_    = nh.advertiseService(trigger_increase_y, &Optimiser::callback_trigger_increase_y,this);
+  service_decrease_y_    = nh.advertiseService(trigger_decrease_y, &Optimiser::callback_trigger_decrease_y,this);
   ROS_INFO_STREAM("commander service ok");
   // ------------------------------------------------------------|
 
@@ -869,6 +885,41 @@ bool Optimiser::callback_trigger_decrease_radius(std_srvs::Trigger::Request  &re
     }
     return true;
 }
+bool Optimiser::callback_trigger_increase_x(std_srvs::Trigger::Request  &req, std_srvs::Trigger::Response &res)
+{
+    if (!is_initialized_) {
+      return false;
+    }
+    searching_circle_center_x += 1.0;
+    return true;
+}
+bool Optimiser::callback_trigger_decrease_x(std_srvs::Trigger::Request  &req, std_srvs::Trigger::Response &res)
+{
+    if (!is_initialized_) {
+      return false;
+    }
+    searching_circle_center_x -= 1.0;
+    return true;
+}
+
+bool Optimiser::callback_trigger_increase_y(std_srvs::Trigger::Request  &req, std_srvs::Trigger::Response &res)
+{
+    if (!is_initialized_) {
+      return false;
+    }
+    searching_circle_center_y += 1.0;
+    return true;
+}
+
+bool Optimiser::callback_trigger_decrease_y(std_srvs::Trigger::Request  &req, std_srvs::Trigger::Response &res)
+{
+    if (!is_initialized_) {
+      return false;
+    }
+    searching_circle_center_y -= 1.0;
+    return true;
+}
+
 
 /*| --------- Optimiser Function --------------------------------|*/
 

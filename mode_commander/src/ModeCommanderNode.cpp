@@ -56,7 +56,7 @@ namespace mode_commander
         ROS_WARN("!Make sure that drones communicate and the centroid has been recorded!");
         ROS_WARN("!Be aware to turn IGNORE ON when returning to searching mode!");
         ROS_WARN("!Be aware to turn RECORDING_CENTROID OFF BEFORE setting MOVING ON!");
-        ROS_INFO_STREAM("\npress r for recording/not_recording centroid between drones\n"<<"press 1 for moving/stopping "<<_uav_name_1<<'\n'<<"press 2 for moving/stopping "<<_uav_name_2<<'\n'<<"press 3 for moving/stopping "<<_uav_name_3<<"\n"<<"press s to switch mode: searching/form_formation\n"<<"press 9 to decrease radius\n"<<"press 0 to increase radius\n"<<"press i to switch ignore mode\n"<<"when ignore is on: drones do not separate\n"<<"when ignore is off: each drone stops at observations\n"<<"press q to exit\n");
+        ROS_INFO_STREAM("\npress r for recording/not_recording centroid between drones\n"<<"use w,a,s,d for moving formation in 4 directions\n"<<"press 1 for moving/stopping "<<_uav_name_1<<'\n'<<"press 2 for moving/stopping "<<_uav_name_2<<'\n'<<"press 3 for moving/stopping "<<_uav_name_3<<"\n"<<"press m to switch mode: searching/form_formation\n"<<"press 9 to decrease radius\n"<<"press 0 to increase radius\n"<<"press i to switch ignore mode\n"<<"when ignore is on: drones do not separate\n"<<"when ignore is off: each drone stops at observations\n"<<"press q to exit\n");
         
         ros::ServiceClient client_uav1 = private_nh.serviceClient<std_srvs::Trigger>("/"+_uav_name_1 +"/trigger_motion");
         ros::ServiceClient client_uav2 = private_nh.serviceClient<std_srvs::Trigger>("/"+_uav_name_2 +"/trigger_motion");
@@ -82,6 +82,21 @@ namespace mode_commander
         ros::ServiceClient client_decrease_radius_uav2 = private_nh.serviceClient<std_srvs::Trigger>("/"+_uav_name_2+"/decrease_radius");
         ros::ServiceClient client_decrease_radius_uav3 = private_nh.serviceClient<std_srvs::Trigger>("/"+_uav_name_3+"/decrease_radius");
 
+        ros::ServiceClient client_increase_x_uav1 = private_nh.serviceClient<std_srvs::Trigger>("/"+_uav_name_1+"/trigger_increase_x");
+        ros::ServiceClient client_increase_x_uav2 = private_nh.serviceClient<std_srvs::Trigger>("/"+_uav_name_2+"/trigger_increase_x");
+        ros::ServiceClient client_increase_x_uav3 = private_nh.serviceClient<std_srvs::Trigger>("/"+_uav_name_3+"/trigger_increase_x");
+        
+        ros::ServiceClient client_decrease_x_uav1 = private_nh.serviceClient<std_srvs::Trigger>("/"+_uav_name_1+"/trigger_decrease_x");
+        ros::ServiceClient client_decrease_x_uav2 = private_nh.serviceClient<std_srvs::Trigger>("/"+_uav_name_2+"/trigger_decrease_x");
+        ros::ServiceClient client_decrease_x_uav3 = private_nh.serviceClient<std_srvs::Trigger>("/"+_uav_name_3+"/trigger_decrease_x");
+        
+        ros::ServiceClient client_increase_y_uav1 = private_nh.serviceClient<std_srvs::Trigger>("/"+_uav_name_1+"/trigger_increase_y");
+        ros::ServiceClient client_increase_y_uav2 = private_nh.serviceClient<std_srvs::Trigger>("/"+_uav_name_2+"/trigger_increase_y");
+        ros::ServiceClient client_increase_y_uav3 = private_nh.serviceClient<std_srvs::Trigger>("/"+_uav_name_3+"/trigger_increase_y");
+        
+        ros::ServiceClient client_decrease_y_uav1 = private_nh.serviceClient<std_srvs::Trigger>("/"+_uav_name_1+"/trigger_decrease_y");
+        ros::ServiceClient client_decrease_y_uav2 = private_nh.serviceClient<std_srvs::Trigger>("/"+_uav_name_2+"/trigger_decrease_y");
+        ros::ServiceClient client_decrease_y_uav3 = private_nh.serviceClient<std_srvs::Trigger>("/"+_uav_name_3+"/trigger_decrease_y");
         
         std_srvs::Trigger srv1;
         std_srvs::Trigger srv2;
@@ -107,7 +122,22 @@ namespace mode_commander
         std_srvs::Trigger ign2;
         std_srvs::Trigger ign3;
         
+        std_srvs::Trigger xplus1;
+        std_srvs::Trigger xplus2;
+        std_srvs::Trigger xplus3;
 
+        std_srvs::Trigger xminus1;
+        std_srvs::Trigger xminus2;
+        std_srvs::Trigger xminus3;
+        
+        std_srvs::Trigger yplus1;
+        std_srvs::Trigger yplus2;
+        std_srvs::Trigger yplus3;
+
+        std_srvs::Trigger yminus1;
+        std_srvs::Trigger yminus2;
+        std_srvs::Trigger yminus3;
+        
         while(ros::ok())
         {
             int c = getch();
@@ -144,7 +174,7 @@ namespace mode_commander
                     ROS_ERROR("Failed to call service uav3");
                 }
             }
-            else if((c=='s')||(c == 'S'))
+            else if((c=='m')||(c == 'M'))
             {
                 if (client_mode_uav1.call(mode1))
                 {
@@ -280,6 +310,114 @@ namespace mode_commander
                     ROS_ERROR("Failed to call decrease service uav3");
                 }
                 
+            }
+            else if((c=='w')||(c == 'W'))
+            {
+                if (client_increase_x_uav1.call(xplus1))
+                {
+                    ROS_INFO("Successfully sent x plus request uav1");
+                }
+                else
+                {
+                    ROS_ERROR("Failed to call x plus service uav1");
+                }
+                if (client_increase_x_uav2.call(xplus2))
+                {
+                    ROS_INFO("Successfully sent x plus request uav2");
+                }
+                else
+                {
+                    ROS_ERROR("Failed to call x plus service uav2");
+                }
+                if (client_increase_x_uav3.call(xplus3))
+                {
+                    ROS_INFO("Successfully sent x plus request uav3");
+                }
+                else
+                {
+                    ROS_ERROR("Failed to call x plus service uav3");
+                }
+            }
+               else if((c=='s')||(c == 'S'))
+            {
+                if (client_decrease_x_uav1.call(xminus1))
+                {
+                    ROS_INFO("Successfully sent x minus request uav1");
+                }
+                else
+                {
+                    ROS_ERROR("Failed to call x minus service uav1");
+                }
+                if (client_decrease_x_uav2.call(xminus2))
+                {
+                    ROS_INFO("Successfully sent x minus request uav2");
+                }
+                else
+                {
+                    ROS_ERROR("Failed to call x minus service uav2");
+                }
+                if (client_decrease_x_uav3.call(xminus3))
+                {
+                    ROS_INFO("Successfully sent x minus request uav3");
+                }
+                else
+                {
+                    ROS_ERROR("Failed to call x minus service uav3");
+                }
+            }
+            else if((c=='a')||(c == 'A'))
+            {
+                if (client_increase_y_uav1.call(yplus1))
+                {
+                    ROS_INFO("Successfully sent y plus request uav1");
+                }
+                else
+                {
+                    ROS_ERROR("Failed to call y plus service uav1");
+                }
+                if (client_increase_y_uav2.call(yplus2))
+                {
+                    ROS_INFO("Successfully sent y plus request uav2");
+                }
+                else
+                {
+                    ROS_ERROR("Failed to call y plus service uav2");
+                }
+                if (client_increase_y_uav3.call(yplus3))
+                {
+                    ROS_INFO("Successfully sent y plus request uav3");
+                }
+                else
+                {
+                    ROS_ERROR("Failed to call y plus service uav3");
+                }
+            }
+            else if((c=='d')||(c == 'D'))
+            {
+                if (client_decrease_y_uav1.call(yminus1))
+                {
+                    ROS_INFO("Successfully sent y minus request uav1");
+                }
+                else
+                {
+                    ROS_ERROR("Failed to call y minus service uav1");
+                }
+                if (client_decrease_y_uav2.call(yminus2))
+                {
+                    ROS_INFO("Successfully sent y minus request uav2");
+                }
+                else
+                {
+                    ROS_ERROR("Failed to call y minus service uav2");
+                }
+                if (client_decrease_y_uav3.call(yminus3))
+                {
+                    ROS_INFO("Successfully sent y minus request uav3");
+                }
+                else
+                {
+                    ROS_ERROR("Failed to call y minus service uav3");
+                }
             }
             else if (c == 'q')
             {

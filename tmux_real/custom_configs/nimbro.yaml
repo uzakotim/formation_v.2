@@ -71,3 +71,11 @@ services:
     type: std_srvs/Trigger
   - name: "trigger_ignore"
     type: std_srvs/Trigger
+  - name: "trigger_increase_x"
+    type: std_srvs/Trigger
+  - name: "trigger_decrease_x"
+    type: std_srvs/Trigger
+  - name: "trigger_increase_y"
+    type: std_srvs/Trigger
+  - name: "trigger_decrease_y"
+    type: std_srvs/Trigger
