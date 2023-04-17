@@ -811,6 +811,14 @@ void Optimiser::callbackTimerPublishGoal([[maybe_unused]] const ros::TimerEvent&
   {
     ROS_INFO("[IGNORE] OFF");
   }
+  if (automatic_control_)
+  {
+    ROS_INFO("[AUTOMATIC] ON");
+  }
+  else
+  {
+    ROS_INFO("[AUTOMATIC] OFF");
+  }
   ROS_INFO_STREAM("[own angle] "<<own_angle);
   // MRS - waypoint --------------------------------------
   srv.request.header.stamp = ros::Time::now();
