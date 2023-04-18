@@ -14,9 +14,9 @@ search_circle_omega:
   radius: 3.0
 search_circle:
   formation_radius: 4.0
-  big_circle_radius: 3.0
+  big_circle_radius: 4.0
   maximal_big_circle_radius: 20.0
-  minimal_big_circle_radius: 1.0
+  minimal_big_circle_radius: 3.0
 optimisation:
   steps: 25
 rate:
