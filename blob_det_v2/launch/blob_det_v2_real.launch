@@ -42,9 +42,9 @@
       <!-- <remap from="~camera_info_in" to="mobius_front/camera_info" /> -->
       <!-- Timur Uzakov Modification  --> 
       <!-- down_rgbd -->
-      <remap from="~image_in" to="/$(arg UAV_NAME)/rgbd/color/image_raw/" />
-      <remap from="~camera_info_in" to="/$(arg UAV_NAME)/rgbd/color/camera_info/" />
-      <remap from="~depth_in" to="/$(arg UAV_NAME)/rgbd/aligned_depth_to_color/image_raw" />
+      <remap from="~image_in" to="/$(arg UAV_NAME)/down_rgbd/color/image_raw/" />
+      <remap from="~camera_info_in" to="/$(arg UAV_NAME)/down_rgbd/color/camera_info/" />
+      <remap from="~depth_in" to="/$(arg UAV_NAME)/down_rgbd/aligned_depth_to_color/image_raw" />
       
       <!-- Publishers (note that the topic names will also be remapped using the namespace as a prefix) -->
       <remap from="~test_publisher" to="~image_number" />
