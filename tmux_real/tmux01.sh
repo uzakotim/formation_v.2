@@ -47,9 +47,9 @@ input=(
 '
   'Status' 'export UAV_NAME="uav$NUMBER1"; waitForRos; roslaunch mrs_uav_status status.launch
 '
-  'Control' 'export UAV_NAME="uav$NUMBER1"; waitForRos; roslaunch mrs_uav_general core.launch config_constraint_manager:=./custom_configs/constraint_manager.yaml config_control_manager:=./custom_configs/control_manager.yaml config_mpc_tracker:=./custom_configs/mpc_tracker.yaml config_odometry:=./custom_configs/odometry.yaml config_uav_manager:=./custom_configs/uav_manager.yaml config_uav_names:=./custom_configs/uav_names.yaml config_landoff_tracker:=./custom_configs/landoff_tracker.yaml
+  'Control' 'export UAV_NAME="uav$NUMBER1"; waitForRos; roslaunch mrs_uav_general core.launch config_constraint_manager:=./custom_configs/constraint_manager.yaml config_control_manager:=./custom_configs/control_manager.yaml config_mpc_tracker:=./custom_configs/mpc_tracker.yaml config_odometry:=./custom_configs/odometry.yaml config_uav_manager:=./custom_configs/uav_manager.yaml config_uav_names:=./custom_configs/uav_names.yaml 
 '
-  'AutoStart' 'export UAV_NAME="uav$NUMBER1"; waitForRos; roslaunch mrs_uav_general automatic_start.launch custom_config:=./custom_configs/automatic_start.yaml
+  'AutoStart' 'export UAV_NAME="uav$NUMBER1"; waitForRos; roslaunch mrs_uav_general automatic_start.launch 
 '
   'slow_odom' 'export UAV_NAME="uav$NUMBER1"; waitForRos; rostopic echo /"uav$NUMBER1"/odometry/slow_odom
 '
