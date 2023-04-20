@@ -153,31 +153,30 @@ private:
   // ------------------------------------------------------------|
 
   // ---------------------Color parameters----------------------------|
-  const cv::Scalar                  color_red_one_min = cv::Scalar(0,100,75);        //RED
-  const cv::Scalar                  color_red_one_max = cv::Scalar(5,255,255);     //RED
+  const cv::Scalar                  color_red_one_min = cv::Scalar(0,50,200);      //RED
+  const cv::Scalar                  color_red_one_max = cv::Scalar(10,255,255);    //RED
 
-  const cv::Scalar                  color_red_two_min = cv::Scalar(175,100,75);      //RED
-  const cv::Scalar                  color_red_two_max = cv::Scalar(180,255,255);    //RED
+  const cv::Scalar                  color_red_two_min = cv::Scalar(150,50,200);    //RED
+  const cv::Scalar                  color_red_two_max = cv::Scalar(180,255,255);   //RED
     
-  const cv::Scalar                  color_blue_min = cv::Scalar(75,100,75);        //BLUE
-  const cv::Scalar                  color_blue_max = cv::Scalar(150,255,255);       //BLUE
+  const cv::Scalar                  color_blue_min = cv::Scalar(75,75,177);        //BLUE
+  const cv::Scalar                  color_blue_max = cv::Scalar(130,255,255);      //BLUE
   
-  const cv::Scalar                  color_orange_min = cv::Scalar(15,150,150);       //ORANGE
-  const cv::Scalar                  color_orange_max = cv::Scalar(30,255,255);     //ORANGE
+  const cv::Scalar                  color_orange_min = cv::Scalar(15,75,177);      //ORANGE
+  const cv::Scalar                  color_orange_max = cv::Scalar(25,255,255);     //ORANGE
             
-  const cv::Scalar                  color_yellow_min = cv::Scalar(25,150,150);       //YELLOW
+  const cv::Scalar                  color_yellow_min = cv::Scalar(25,100,177);     //YELLOW
   const cv::Scalar                  color_yellow_max = cv::Scalar(35,255,255);     //YELLOW
  
-  const cv::Scalar                  color_green_min = cv::Scalar(35,150,150);      //GREEN
+  const cv::Scalar                  color_green_min = cv::Scalar(35,100,177);      //GREEN
   const cv::Scalar                  color_green_max = cv::Scalar(75,255,255);      //GREEN
   
-  const cv::Scalar                  color_purple_min = cv::Scalar(150,100,75);      //PURPLE
+  const cv::Scalar                  color_purple_min = cv::Scalar(150,100,177);    //PURPLE
   const cv::Scalar                  color_purple_max = cv::Scalar(175,255,255);    //PURPLE
   
   const cv::Scalar                  color_black_min = cv::Scalar(0,0,0);           //BLACK
   const cv::Scalar                  color_black_max = cv::Scalar(180,255,30);      //BLACK
  
-
   // in BGR
   const cv::Scalar                  detection_color_blue   = cv::Scalar(255,100,0);
   const cv::Scalar                  detection_color_red    = cv::Scalar(0,0,255);
@@ -384,7 +383,7 @@ void BlobDet::GrabRGBD(const sensor_msgs::ImageConstPtr& msgRGB,const sensor_msg
     detection_color_one = detection_color_red;
     contours_two = BlobDet::ReturnContours(blue_mask);
     detection_color_two = detection_color_blue;
-    contours_three = BlobDet::ReturnContours(purple_mask);
+    contours_three = BlobDet::ReturnContours(orange_mask);
     detection_color_three = detection_color_purple;
 
   }
