@@ -156,7 +156,7 @@ private:
   const cv::Scalar                  color_red_one_min = cv::Scalar(0,50,200);      //RED
   const cv::Scalar                  color_red_one_max = cv::Scalar(10,255,255);    //RED
 
-  const cv::Scalar                  color_red_two_min = cv::Scalar(150,50,200);    //RED
+  const cv::Scalar                  color_red_two_min = cv::Scalar(175,50,200);    //RED
   const cv::Scalar                  color_red_two_max = cv::Scalar(180,255,255);   //RED
     
   const cv::Scalar                  color_blue_min = cv::Scalar(75,75,177);        //BLUE
@@ -171,7 +171,7 @@ private:
   const cv::Scalar                  color_green_min = cv::Scalar(35,100,177);      //GREEN
   const cv::Scalar                  color_green_max = cv::Scalar(75,255,255);      //GREEN
   
-  const cv::Scalar                  color_purple_min = cv::Scalar(150,100,177);    //PURPLE
+  const cv::Scalar                  color_purple_min = cv::Scalar(150,50,200);    //PURPLE
   const cv::Scalar                  color_purple_max = cv::Scalar(175,255,255);    //PURPLE
   
   const cv::Scalar                  color_black_min = cv::Scalar(0,0,0);           //BLACK
@@ -383,7 +383,7 @@ void BlobDet::GrabRGBD(const sensor_msgs::ImageConstPtr& msgRGB,const sensor_msg
     detection_color_one = detection_color_red;
     contours_two = BlobDet::ReturnContours(blue_mask);
     detection_color_two = detection_color_blue;
-    contours_three = BlobDet::ReturnContours(orange_mask);
+    contours_three = BlobDet::ReturnContours(purple_mask);
     detection_color_three = detection_color_purple;
 
   }
