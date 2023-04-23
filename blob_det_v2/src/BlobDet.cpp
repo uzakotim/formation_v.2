@@ -156,7 +156,7 @@ private:
   const cv::Scalar                  color_red_one_min = cv::Scalar(0,50,200);      //RED
   const cv::Scalar                  color_red_one_max = cv::Scalar(10,255,255);    //RED
 
-  const cv::Scalar                  color_red_two_min = cv::Scalar(175,50,200);    //RED
+  const cv::Scalar                  color_red_two_min = cv::Scalar(170,50,200);    //RED
   const cv::Scalar                  color_red_two_max = cv::Scalar(180,255,255);   //RED
     
   const cv::Scalar                  color_blue_min = cv::Scalar(75,75,177);        //BLUE
@@ -171,8 +171,8 @@ private:
   const cv::Scalar                  color_green_min = cv::Scalar(35,100,177);      //GREEN
   const cv::Scalar                  color_green_max = cv::Scalar(75,255,255);      //GREEN
   
-  const cv::Scalar                  color_purple_min = cv::Scalar(150,50,200);    //PURPLE
-  const cv::Scalar                  color_purple_max = cv::Scalar(175,255,255);    //PURPLE
+  const cv::Scalar                  color_purple_min = cv::Scalar(140,50,200);    //PURPLE
+  const cv::Scalar                  color_purple_max = cv::Scalar(170,255,255);    //PURPLE
   
   const cv::Scalar                  color_black_min = cv::Scalar(0,0,0);           //BLACK
   const cv::Scalar                  color_black_max = cv::Scalar(180,255,30);      //BLACK
@@ -392,7 +392,7 @@ void BlobDet::GrabRGBD(const sensor_msgs::ImageConstPtr& msgRGB,const sensor_msg
 
     contours_one = BlobDet::ReturnContours(red_mask);
     detection_color_one = detection_color_red;
-    contours_two = BlobDet::ReturnContours(green_mask);
+    contours_two = BlobDet::ReturnContours(purple_mask);
     detection_color_two = detection_color_green;
     contours_three = BlobDet::ReturnContours(orange_mask);
     detection_color_three = detection_color_orange;
@@ -460,8 +460,14 @@ void BlobDet::GrabRGBD(const sensor_msgs::ImageConstPtr& msgRGB,const sensor_msg
       
                   const geometry_msgs::PoseStamped global = BlobDet::projectWorldPointToGlobal(cv_image, msg_header.stamp, center3D.x, center3D.y, center3D.z);
                   // | --------- Timur Uzakov Modification -------- |
-                  ROS_INFO_STREAM("[BLUE] x: "<<global.pose.position.x<<"y: "<<global.pose.position.y<<"z: "<<global.pose.position.z);
-                  
+                  if (_environment_ == "ground")
+                  {
+                    ROS_INFO_STREAM("[BLUE] x: "<<global.pose.position.x<<"y: "<<global.pose.position.y<<"z: "<<global.pose.position.z);
+                  }
+                  else
+                  {
+                    ROS_INFO_STREAM("[PURPLE] x: "<<global.pose.position.x<<"y: "<<global.pose.position.y<<"z: "<<global.pose.position.z);
+                  }
                   mrs_msgs::PoseWithCovarianceIdentified detected_point;
                   detected_point.pose.position.x = global.pose.position.x;
                   detected_point.pose.position.y = global.pose.position.y;
@@ -496,7 +502,14 @@ void BlobDet::GrabRGBD(const sensor_msgs::ImageConstPtr& msgRGB,const sensor_msg
       
                   const geometry_msgs::PoseStamped global = BlobDet::projectWorldPointToGlobal(cv_image, msg_header.stamp, center3D.x, center3D.y, center3D.z);
                   // | --------- Timur Uzakov Modification -------- |
-                  ROS_INFO_STREAM("[PURPLE] x: "<<global.pose.position.x<<"y: "<<global.pose.position.y<<"z: "<<global.pose.position.z);
+                  if (_environment_ == "ground")
+                  {
+                    ROS_INFO_STREAM("[PURPLE] x: "<<global.pose.position.x<<"y: "<<global.pose.position.y<<"z: "<<global.pose.position.z);
+                  }
+                  else
+                  {
+                    ROS_INFO_STREAM("[ORANGE] x: "<<global.pose.position.x<<"y: "<<global.pose.position.y<<"z: "<<global.pose.position.z);
+                  }
                   
                   mrs_msgs::PoseWithCovarianceIdentified detected_point;
                   detected_point.pose.position.x = global.pose.position.x;
