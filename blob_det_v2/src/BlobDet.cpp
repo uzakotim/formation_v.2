@@ -162,9 +162,12 @@ private:
   const cv::Scalar                  color_blue_min = cv::Scalar(75,75,177);        //BLUE
   const cv::Scalar                  color_blue_max = cv::Scalar(130,255,255);      //BLUE
   
-  const cv::Scalar                  color_orange_min = cv::Scalar(15,75,177);      //ORANGE
-  const cv::Scalar                  color_orange_max = cv::Scalar(25,255,255);     //ORANGE
+  const cv::Scalar                  color_orange_min = cv::Scalar(0,0,0);      //ORANGE
+  const cv::Scalar                  color_orange_max = cv::Scalar(0,0,0);     //ORANGE
             
+  // const cv::Scalar                  color_orange_min = cv::Scalar(15,75,177);      //ORANGE
+  // const cv::Scalar                  color_orange_max = cv::Scalar(25,255,255);     //ORANGE
+  
   const cv::Scalar                  color_yellow_min = cv::Scalar(25,100,177);     //YELLOW
   const cv::Scalar                  color_yellow_max = cv::Scalar(35,255,255);     //YELLOW
  
