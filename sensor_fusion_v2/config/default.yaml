@@ -9,7 +9,7 @@ world_point:
   y: 0.0
   z: 0.0
 formation_circle:
-  radius_threshold: 3.0
+  radius_threshold: 4.0
 
 memory_size: 20  #how many centroids to store, how fast centroids will be updated
 rate:
