@@ -393,7 +393,7 @@ void BlobDet::GrabRGBD(const sensor_msgs::ImageConstPtr& msgRGB,const sensor_msg
     contours_one = BlobDet::ReturnContours(red_mask);
     detection_color_one = detection_color_red;
     contours_two = BlobDet::ReturnContours(purple_mask);
-    detection_color_two = detection_color_green;
+    detection_color_two = detection_color_purple;
     contours_three = BlobDet::ReturnContours(orange_mask);
     detection_color_three = detection_color_orange;
   }
