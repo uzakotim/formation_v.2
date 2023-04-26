@@ -235,7 +235,7 @@ private:
 
   double searching_circle_center_x;
   double searching_circle_center_y;
-  double z_height {4.0}; // set height of formation
+  double z_height; // set height of formation
   // priority parameters
   int own_angle;
   int neigh1_angle {-1};
@@ -310,6 +310,7 @@ void Optimiser::onInit() {
   param_loader.loadParam("world_point/x", world_point_x_);
   param_loader.loadParam("world_point/y", world_point_y_);
   param_loader.loadParam("world_point/z", world_point_z_);
+  param_loader.loadParam("height_of_formation", z_height);
   // param_loader.loadParam("offset_angle/"+_uav_name_, offset_angle_);
   param_loader.loadParam("search_circle_omega/delta", delta_angle);
   param_loader.loadParam("search_circle_omega/radius", default_searching_circle_radius);
