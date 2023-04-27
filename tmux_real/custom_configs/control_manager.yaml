@@ -8,3 +8,8 @@ safety:
     ehover: true
     eland: true
     failsafe: true
+  # handoff directly to RC control
+  # * overrides eland and failsafe landing
+  # * recommended when flying over water
+  rc_emergency_handoff:
+    enabled: true
