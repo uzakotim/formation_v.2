@@ -394,8 +394,8 @@ void BlobDet::GrabRGBD(const sensor_msgs::ImageConstPtr& msgRGB,const sensor_msg
     detection_color_one = detection_color_red;
     contours_two = BlobDet::ReturnContours(purple_mask);
     detection_color_two = detection_color_purple;
-    // contours_three = BlobDet::ReturnContours(orange_mask);
-    // detection_color_three = detection_color_orange;
+    contours_three = BlobDet::ReturnContours(orange_mask);
+    detection_color_three = detection_color_orange;
   }
   // std::vector<std::vector<cv::Point>> contours_orange = BlobDet::ReturnContours(orange_mask);
   
@@ -483,49 +483,49 @@ void BlobDet::GrabRGBD(const sensor_msgs::ImageConstPtr& msgRGB,const sensor_msg
               }
       }
     } 
-    // // Mask three
-    // if (contours_three.size()>0)
-    // {
-      // for (size_t n = 0;n<contours_three.size();n++)
-      // {
-      //         double newArea = cv::contourArea(contours_three.at(n));
-      //         if(newArea > blob_size)
-      //         {   
-      //             // Finding blob's center       
-      //             cv::Point2f center = BlobDet::FindCenter(contours_three, n);
-      //             unsigned short val = depth_image.at<unsigned short>(center.y, center.x);
-      //             center3D.x = center.x;
-      //             center3D.y = center.y;
-      //             center3D.z = (float)val/1000.0;
+    // Mask three
+    if (contours_three.size()>0)
+    {
+      for (size_t n = 0;n<contours_three.size();n++)
+      {
+              double newArea = cv::contourArea(contours_three.at(n));
+              if(newArea > blob_size)
+              {   
+                  // Finding blob's center       
+                  cv::Point2f center = BlobDet::FindCenter(contours_three, n);
+                  unsigned short val = depth_image.at<unsigned short>(center.y, center.x);
+                  center3D.x = center.x;
+                  center3D.y = center.y;
+                  center3D.z = (float)val/1000.0;
 
                   // | ----------- Project a world point to the image ----------- |
       
-                  // const geometry_msgs::PoseStamped global = BlobDet::projectWorldPointToGlobal(cv_image, msg_header.stamp, center3D.x, center3D.y, center3D.z);
-                  // // | --------- Timur Uzakov Modification -------- |
-                  // if (_environment_ == "ground")
-                  // {
-                  //   ROS_INFO_STREAM("[PURPLE] x: "<<global.pose.position.x<<"y: "<<global.pose.position.y<<"z: "<<global.pose.position.z);
-                  // }
-                  // else
-                  // {
-                  //   ROS_INFO_STREAM("[ORANGE] x: "<<global.pose.position.x<<"y: "<<global.pose.position.y<<"z: "<<global.pose.position.z);
-                  // }
+                  const geometry_msgs::PoseStamped global = BlobDet::projectWorldPointToGlobal(cv_image, msg_header.stamp, center3D.x, center3D.y, center3D.z);
+                  // | --------- Timur Uzakov Modification -------- |
+                  if (_environment_ == "ground")
+                  {
+                    ROS_INFO_STREAM("[PURPLE] x: "<<global.pose.position.x<<"y: "<<global.pose.position.y<<"z: "<<global.pose.position.z);
+                  }
+                  else
+                  {
+                    ROS_INFO_STREAM("[ORANGE] x: "<<global.pose.position.x<<"y: "<<global.pose.position.y<<"z: "<<global.pose.position.z);
+                  }
                   
-                  // mrs_msgs::PoseWithCovarianceIdentified detected_point;
-                  // detected_point.pose.position.x = global.pose.position.x;
-                  // detected_point.pose.position.y = global.pose.position.y;
-                  // detected_point.pose.position.z = global.pose.position.z;
-    //               points_array.push_back(detected_point);
+                  mrs_msgs::PoseWithCovarianceIdentified detected_point;
+                  detected_point.pose.position.x = global.pose.position.x;
+                  detected_point.pose.position.y = global.pose.position.y;
+                  detected_point.pose.position.z = global.pose.position.z;
+                  points_array.push_back(detected_point);
                   
-    //               // Drawing 
-    //               statePt2D.x = center.x;
-    //               statePt2D.y = center.y;
-    //               cv::circle  (drawing, statePt2D, 5, detection_color_three, 10);
-    //               float radius = BlobDet::FindRadius(contours_three, n);
-    //               cv::circle  (drawing, statePt2D, int(radius), detection_color_three, 2 );
-    //           }
-    //   }
-    // }
+                  // Drawing 
+                  statePt2D.x = center.x;
+                  statePt2D.y = center.y;
+                  cv::circle  (drawing, statePt2D, 5, detection_color_three, 10);
+                  float radius = BlobDet::FindRadius(contours_three, n);
+                  cv::circle  (drawing, statePt2D, int(radius), detection_color_three, 2 );
+              }
+      }
+    }
   }  
 
   /* show the image in gui (!the image will be displayed after calling cv::waitKey()!) */

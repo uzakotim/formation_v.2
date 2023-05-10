@@ -24,14 +24,14 @@
 
   <!-- Namespace - all topics and parameters will be remapped using this namespace as a prefix (eg.: "/sync_blob_det/image_in" to "/uav1/sync_blob_det/image_in") -->
   <group ns="$(arg UAV_NAME)">
-
+  
     <!-- EdgeDetect nodelet -->
     <node pkg="nodelet" type="nodelet" name="blob_det_v2" args="$(arg nodelet) blob_det_v2/BlobDet $(arg nodelet_manager)" launch-prefix="$(arg launch_prefix_debug)" output="screen">
 
       <!-- Parameters loaded from launch file -->
       <param name="gui" type="bool" value="$(arg gui)"/>
 
-      <param name="UAV_NAME" type="string" value="$(arg UAV_NAME)"/>
+      <param name="UAV_NAME" type="string" value="$(arg UAV_NAME)"/>    
 
       <!-- ROS parameters config file -->
       <rosparam file="$(find blob_det_v2)/config/default.yaml" />

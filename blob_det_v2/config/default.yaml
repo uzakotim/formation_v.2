@@ -15,4 +15,4 @@ rate:
   check_subscribers: 1 # [Hz]
 
 # select environment : "ground" or "water"
-environment: "water"
+environment: "ground"

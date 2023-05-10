@@ -11,7 +11,7 @@ world_point:
 height_of_formation: 5.0
 search_circle_omega:
   # delta angle in radians
-  delta: 0.04444444444
+  delta: 0.0222222222
   radius: 3.0
 search_circle:
   formation_radius: 4.0
