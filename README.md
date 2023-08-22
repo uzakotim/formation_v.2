@@ -1,5 +1,6 @@
 # Non-linear Optimal Perception-Driven Multi-drone Control
-My Master Thesis diploma work
+My Master Thesis diploma work. The package of ROS(noetic) nodes, that enable drones to detect colored plates and form a triangular shape around them.
+
 
 USER GUIDE:
 - press r for recording/not_recording centroid between drones
